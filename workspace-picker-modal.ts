@@ -80,8 +80,8 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
       },
     ]);
     this.scope.register(["Shift"], "Delete", this.deleteWorkspace.bind(this));
-    this.scope.register(["Shift"], "Enter", evt => this.chooser.useSelectedItem(evt));
-    this.scope.register(["Alt"], "Enter", evt => this.chooser.useSelectedItem(evt));
+    this.scope.register(["Shift"], "Enter", evt => this.useSelectedItem(evt));
+    this.scope.register(["Alt"], "Enter", evt => this.useSelectedItem(evt));
   }
 
   workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
@@ -97,10 +97,27 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
 
   onClose() {
     super.onClose();
+    this.app.workspace.trigger("layout-change");
+  }
+
+  useSelectedItem = function(evt: MouseEvent | KeyboardEvent) {
+    let workspaceName = this.inputEl.value ? this.inputEl.value : null;
+    if (!this.values && workspaceName && evt.shiftKey) {
+      this.saveAndStay();
+      this.setWorkspace(workspaceName);
+      this.close();
+      return !1;
+    }
+    else if (!this.values)
+      return !1;
+    var item = this.values ? this.values[this.selectedItem] : workspaceName;
+    return void 0 !== item && (this.chooser.selectSuggestion(item, evt),
+      !0)
   }
 
   saveAndStay() {
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
+    console.log('save as: ' + workspaceName)
     this.workspacePlugin.saveWorkspace(workspaceName);
   }
 
@@ -109,9 +126,11 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   }
 
   deleteWorkspace() {
-    let workspaceName = this.chooser.values[this.chooser.selectedItem].item;
+    let currentSelection = this.chooser.selectedItem
+    let workspaceName = this.chooser.values[currentSelection].item;
     this.workspacePlugin.deleteWorkspace(workspaceName);
     this.chooser.chooser.updateSuggestions();
+    this.chooser.setSelectedItem(currentSelection-1);
   }
 
   getItems(): any[] {
@@ -123,6 +142,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   }
 
   onChooseItem(item: any, evt: MouseEvent | KeyboardEvent): void {
+    console.log("choose")
     let modifiers: string;
 
     if (evt.shiftKey && !evt.altKey) modifiers = "Shift";
@@ -133,7 +153,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     if (modifiers === "Alt") this.saveAndSwitch(), this.setWorkspace(item);
     else this.setWorkspace(item);
 
-    this.app.workspace.trigger("layout-change");
+    // this.app.workspace.trigger("layout-change");
   }
 
   setWorkspace(workspaceName: string) {
