@@ -1,10 +1,10 @@
-import { Plugin } from "obsidian";
+import { Plugin, WorkspacePluginInstance } from "obsidian";
 import WorkspacePickerPluginModal from "workspace-picker-modal";
 
 export default class WorkspacePicker extends Plugin {
   async onload() {
     const workspacePickerStatusBarItem: HTMLElement = this.addStatusBarItem();
-    const workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance;
+    const workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
 
     const changeWorkspaceButton: HTMLElement = workspacePickerStatusBarItem.createDiv({
       cls: "status-bar-item mod-clickable",
