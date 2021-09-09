@@ -48,7 +48,7 @@ declare module "obsidian" {
     saveWorkspace(workspaceName: string): void;
     loadWorkspace(workspaceName: string): void;
     activeWorkspace: string;
-    workspaces: { [x: string]: { [x: string]: any; active: any; }; };
+    workspaces: { [x: string]: { [x: string]: any; active: any; }; }; // TODO: fix this inferred typing
   }
 }
 
@@ -164,15 +164,15 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   }
 
   useSelectedItem = function (evt: MouseEvent | KeyboardEvent) {
-    let workspaceName = this.inputEl.value ? this.inputEl.value : null;
+    let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     if (!this.values && workspaceName && evt.shiftKey) {
       this.saveAndStay();
       this.setWorkspace(workspaceName);
       this.close();
       return !1;
-    } else if (!this.values) return !1;
-    var item = this.values ? this.values[this.selectedItem] : workspaceName;
-    return void 0 !== item && (this.chooser.selectSuggestion(item, evt), !0);
+    } else if (!this.chooser.values) return !1;
+    var item = this.chooser.values ? this.chooser.values[this.chooser.selectedItem] : workspaceName;
+    return void 0 !== item && (this.selectSuggestion(item, evt), !0);
   };
 
   saveAndStay() {
@@ -230,7 +230,6 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     if (evt.shiftKey && !evt.altKey) modifiers = "Shift";
     else if (evt.altKey && !evt.shiftKey) modifiers = "Alt";
     else modifiers = "";
-
     if (modifiers === "Shift") this.saveAndStay(), this.setWorkspace(item), this.close();
     if (modifiers === "Alt") this.saveAndSwitch(), this.setWorkspace(item);
     else this.setWorkspace(item);
