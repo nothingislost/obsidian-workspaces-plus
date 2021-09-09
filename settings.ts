@@ -4,7 +4,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 
 export class WorkspacePickerSettings {
   showInstructions = true;
-  showDeletePrompt = true
+  showDeletePrompt = true;
 }
 
 export class WorkspacePickerSettingsTab extends PluginSettingTab {
@@ -24,9 +24,7 @@ export class WorkspacePickerSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Show instructions")
-      .setDesc(
-        `Show instructions on the workspace dropdown that explain the various keyboard shortcuts`
-      )
+      .setDesc(`Show instructions on the workspace dropdown that explain the various keyboard shortcuts`)
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showInstructions).onChange(value => {
           this.plugin.settings.showInstructions = value;
@@ -34,11 +32,9 @@ export class WorkspacePickerSettingsTab extends PluginSettingTab {
         })
       );
 
-      new Setting(containerEl)
+    new Setting(containerEl)
       .setName("Show workspace delete confirmation")
-      .setDesc(
-        `Show a confirmation prompt on workspace deletion`
-      )
+      .setDesc(`Show a confirmation prompt on workspace deletion`)
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showDeletePrompt).onChange(value => {
           this.plugin.settings.showDeletePrompt = value;

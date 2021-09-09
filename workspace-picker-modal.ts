@@ -1,8 +1,7 @@
 import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
-import { throws } from "assert";
-import { settings } from "cluster";
+
 
 declare module "obsidian" {
   export interface FuzzySuggestModal<T> {
@@ -49,7 +48,7 @@ declare module "obsidian" {
     saveWorkspace(workspaceName: string): void;
     loadWorkspace(workspaceName: string): void;
     activeWorkspace: string;
-    workspaces: {};
+    workspaces: { [x: string]: { [x: string]: any; active: any; }; };
   }
 }
 

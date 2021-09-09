@@ -1,0 +1,24 @@
+# Intellij
+*.iml
+.idea
+
+# npm
+node_modules
+package-lock.json
+
+# build
+main.js
+*.js.map
+
+# obsidian
+data.json
+
+# other
+.env
+
+.DS_Store
+.github
+.hotreload
+*.zip
+*.code-workspace
+yarn.lock
