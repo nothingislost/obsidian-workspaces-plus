@@ -33,20 +33,21 @@
   fill: var(--text-normal);
 }
 
-.status-bar .plugin-workspace-picker > .status-bar-item {
-  display: inline-block;
-  padding: 0;
-  margin: 0;
-  vertical-align: middle;
+.status-bar .plugin-workspace-picker .status-bar-item-segment.icon {
+  /* margin-right: 2px;
+  vertical-align: middle; */
+  position: absolute;
+  /* margin-top: 1px; */
 }
 
-.status-bar .plugin-workspace-picker .icon {
-  display: inline-block;
+.status-bar .plugin-workspace-picker .status-bar-item-segment.name {
+  margin-left: 1.4em;
 }
 
 .status-bar .plugin-workspace-picker .icon svg {
+  height: 16px;
+  width: 16px;
   vertical-align: text-top;
-  margin-right: 2px;
 }
 
 .workspace-picker-modal .workspace-item[contenteditable="true"] {
