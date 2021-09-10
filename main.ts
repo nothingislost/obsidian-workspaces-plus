@@ -14,26 +14,30 @@ export default class WorkspacePicker extends Plugin {
 
     // add the settings tab
     this.addSettingTab(new WorkspacePickerSettingsTab(this.app, this));
-
-    const workspacePickerStatusBarItem = this.addStatusBarItem();
+    
     this.workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
 
-    const icon = workspacePickerStatusBarItem.createSpan("status-bar-item-segment icon");
-    setIcon(icon, "pane-layout"); //pane-layout
-
-    this.changeWorkspaceButton = workspacePickerStatusBarItem.createSpan({
-      cls: "status-bar-item-segment name",
-      text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
-      prepend: false,
-    });
+    setTimeout(() => { // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
+      const workspacePickerStatusBarItem = this.addStatusBarItem();
+      workspacePickerStatusBarItem.addClass('mod-clickable')
+      const icon = workspacePickerStatusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
+      setIcon(icon, "pane-layout"); //pane-layout
+  
+      this.changeWorkspaceButton = workspacePickerStatusBarItem.createSpan({
+        cls: "status-bar-item-segment name",
+        text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
+        prepend: false,
+      });
+      workspacePickerStatusBarItem.addEventListener("click", () => {
+        new WorkspacePickerPluginModal(this.app, this.settings).open();
+      });
+    }, 100);
 
     this.registerEvent(this.app.workspace.on("layout-change", this.updateWorkspaceName));
 
     this.registerEvent(this.app.workspace.on("resize", this.updateWorkspaceName));
 
-    this.changeWorkspaceButton.addEventListener("click", () => {
-      new WorkspacePickerPluginModal(this.app, this.settings).open();
-    });
+
 
     this.addCommand({
       id: "open-workspace-picker",
@@ -43,7 +47,9 @@ export default class WorkspacePicker extends Plugin {
   }
 
   updateWorkspaceName = () => {
-    this.changeWorkspaceButton.setText(this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""));
+    setTimeout(() => {
+      this.changeWorkspaceButton.setText(this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""));
+    }, 100);
   };
 
   isWorkspaceModified = () => {

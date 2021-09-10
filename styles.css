@@ -50,7 +50,7 @@
   vertical-align: text-top;
 }
 
-.workspace-picker-modal .workspace-item[contenteditable="true"] {
+.workspace-picker-modal .workspace-item[contenteditable="true"]:focus {
   cursor: text;
   border: 1px solid #777;
   border-radius: 6px;
