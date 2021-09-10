@@ -1,6 +1,7 @@
 import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
-import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
+import { WorkspacePickerSettings } from "./settings";
+import { settings } from "cluster";
 
 declare module "obsidian" {
   export interface FuzzySuggestModal<T> {
@@ -254,6 +255,10 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     el.dataset.workspaceName = el.textContent;
     el.removeClass("suggestion-item");
     el.addClass("workspace-item");
+    if (el.textContent === this.workspacePlugin.activeWorkspace) {
+      const activeIcon = newDiv.createDiv("active-workspace");
+      activeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"/></svg>`;
+    }
     newDiv.appendChild(el);
     const resultEl = document.body.querySelector("div.workspace-picker-modal div.prompt-results");
     resultEl.appendChild(newDiv);
@@ -305,6 +310,10 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     else modifiers = "";
     if (modifiers === "Shift") this.saveAndStay(), this.setWorkspace(item), this.close();
     else if (modifiers === "Alt") this.saveAndSwitch(), this.loadWorkspace(item);
+    else if (this.settings.saveOnSwitch) {
+      this.workspacePlugin.saveWorkspace(this.activeWorkspace);
+      this.loadWorkspace(item);
+    }
     else this.loadWorkspace(item);
   }
 

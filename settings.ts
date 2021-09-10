@@ -5,6 +5,7 @@ import { App, PluginSettingTab, Setting } from "obsidian";
 export class WorkspacePickerSettings {
   showInstructions = true;
   showDeletePrompt = true;
+  saveOnSwitch = false;
 }
 
 export class WorkspacePickerSettingsTab extends PluginSettingTab {
@@ -38,6 +39,16 @@ export class WorkspacePickerSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showDeletePrompt).onChange(value => {
           this.plugin.settings.showDeletePrompt = value;
+          this.plugin.saveData(this.plugin.settings);
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Always save current workspace on workspace switch")
+      .setDesc(`This option will always save your current workspace state prior to switching workspaces`)
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.saveOnSwitch).onChange(value => {
+          this.plugin.settings.saveOnSwitch = value;
           this.plugin.saveData(this.plugin.settings);
         })
       );
