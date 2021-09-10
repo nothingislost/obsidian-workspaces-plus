@@ -1,7 +1,6 @@
-import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance } from "obsidian";
+import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
-
 
 declare module "obsidian" {
   export interface FuzzySuggestModal<T> {
@@ -47,8 +46,14 @@ declare module "obsidian" {
     deleteWorkspace(workspaceName: string): void;
     saveWorkspace(workspaceName: string): void;
     loadWorkspace(workspaceName: string): void;
+    setActiveWorkspace(workspaceName: string): void;
     activeWorkspace: string;
-    workspaces: { [x: string]: { [x: string]: any; active: any; }; }; // TODO: fix this inferred typing
+
+    workspaces: { [x: string]: Workspaces }; // TODO: fix this inferred typing
+  }
+
+  export interface Workspaces {
+    [x: string]: any; // TODO: fix typing
   }
 }
 
@@ -110,7 +115,8 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     //@ts-ignore
     this.bgEl.setAttribute("style", "background-color: transparent");
     this.modalEl.classList.add("workspace-picker-modal");
-
+    this.resultContainerEl.on("click", ".workspace-item", this.onSuggestionClick.bind(this));
+    this.resultContainerEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
     this.setPlaceholder("Type workspace name...");
     if (settings.showInstructions) {
       this.setInstructions([
@@ -132,10 +138,28 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
         },
       ]);
     }
+    //@ts-ignore
+    this.scope.unregister(this.scope.keys[3]); // TODO: remove the existing enter keybinding more gracefully
+    this.scope.register([], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Shift"], "Delete", this.deleteWorkspace.bind(this));
     this.scope.register(["Shift"], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Alt"], "Enter", evt => this.useSelectedItem(evt));
   }
+
+  onSuggestionClick = function (evt: MouseEvent | KeyboardEvent, itemEl: HTMLElement) {
+    if (itemEl.contentEditable === "true") {
+      evt.stopPropagation();
+      return;
+    }
+    evt.preventDefault();
+    var item = this.chooser.suggestions.indexOf(itemEl);
+    this.chooser.setSelectedItem(item), this.useSelectedItem(evt);
+  };
+
+  onSuggestionMouseover = function (evt: MouseEvent | KeyboardEvent, itemEl: HTMLElement) {
+    var item = this.chooser.suggestions.indexOf(itemEl);
+    this.chooser.setSelectedItem(item);
+  };
 
   open = () => {
     (<any>this.app).keymap.pushScope(this.scope);
@@ -164,6 +188,19 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   }
 
   useSelectedItem = function (evt: MouseEvent | KeyboardEvent) {
+    // @ts-ignore
+    const targetEl = evt.path[0];
+    if (targetEl.contentEditable === "true") {
+      const originalName = targetEl.dataset.workspaceName;
+      const newName = targetEl.textContent;
+      this.workspacePlugin.deleteWorkspace(originalName);
+      this.workspacePlugin.saveWorkspace(newName);
+      if (originalName === this.activeWorkspace) this.setWorkspace(newName);
+      this.chooser.chooser.updateSuggestions();
+      targetEl.contentEditable = "false";
+      this.app.workspace.trigger("layout-change");
+      return;
+    }
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     if (!this.values && workspaceName && evt.shiftKey) {
       this.saveAndStay();
@@ -209,6 +246,49 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     // );
   }
 
+  // t.createEl("kbd", {
+  //   cls: "suggestion-hotkey",
+  //   text: je("interface.label-enter-to-create")
+  // }),
+
+  // renderSuggestion = function(e, t) {
+  //   Vk(t, this.getItemText(e.item), e.match)
+  // },
+
+  renderSuggestion(item: FuzzyMatch<any>, el: HTMLElement) {
+    super.renderSuggestion(item, el);
+    var newDiv = document.createElement("div");
+    el.dataset.workspaceName = el.textContent;
+    el.removeClass("suggestion-item");
+    el.addClass("workspace-item");
+    newDiv.appendChild(el);
+    const resultEl = document.body.querySelector("div.workspace-picker-modal div.prompt-results");
+    resultEl.appendChild(newDiv);
+    const foo = newDiv.createDiv("rename-workspace");
+    foo.addEventListener("click", event => {
+      event.stopPropagation();
+      // newDiv.onClickEvent(function(e) {
+      //   e.stopPropagation();
+      // });
+      if (el.contentEditable === "true") {
+        el.textContent = el.dataset.workspaceName;
+        el.contentEditable = "false";
+        return;
+      } else {
+        el.contentEditable = "true";
+      }
+      const selection = window.getSelection();
+      const range = document.createRange();
+      selection.removeAllRanges();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      selection.addRange(range);
+      el.focus();
+    });
+
+    foo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M12.9 6.858l4.242 4.243L7.242 21H3v-4.243l9.9-9.9zm1.414-1.414l2.121-2.122a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414l-2.122 2.121-4.242-4.242z"/></svg>`;
+  }
+
   doDelete(workspaceName: string) {
     let currentSelection = this.chooser.selectedItem;
     this.workspacePlugin.deleteWorkspace(workspaceName);
@@ -226,18 +306,19 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
 
   onChooseItem(item: any, evt: MouseEvent | KeyboardEvent): void {
     let modifiers: string;
-
     if (evt.shiftKey && !evt.altKey) modifiers = "Shift";
     else if (evt.altKey && !evt.shiftKey) modifiers = "Alt";
     else modifiers = "";
     if (modifiers === "Shift") this.saveAndStay(), this.setWorkspace(item), this.close();
-    if (modifiers === "Alt") this.saveAndSwitch(), this.setWorkspace(item);
-    else this.setWorkspace(item);
-
-    // this.app.workspace.trigger("layout-change");
+    else if (modifiers === "Alt") this.saveAndSwitch(), this.loadWorkspace(item);
+    else this.loadWorkspace(item);
   }
 
   setWorkspace(workspaceName: string) {
+    this.workspacePlugin.setActiveWorkspace(workspaceName);
+  }
+
+  loadWorkspace(workspaceName: string) {
     this.workspacePlugin.loadWorkspace(workspaceName);
   }
 }

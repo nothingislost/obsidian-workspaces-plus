@@ -1,4 +1,4 @@
-import { Plugin, WorkspacePluginInstance, setIcon } from "obsidian";
+import { Plugin, WorkspacePluginInstance, setIcon, Workspaces } from "obsidian";
 import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
 import WorkspacePickerPluginModal from "workspace-picker-modal";
 import { deepEqual } from "fast-equals";
@@ -6,7 +6,7 @@ import { deepEqual } from "fast-equals";
 export default class WorkspacePicker extends Plugin {
   settings: WorkspacePickerSettings;
   workspacePlugin: WorkspacePluginInstance;
-  changeWorkspaceButton: HTMLElement
+  changeWorkspaceButton: HTMLElement;
 
   async onload() {
     // load settings
@@ -27,13 +27,9 @@ export default class WorkspacePicker extends Plugin {
       prepend: false,
     });
 
-    this.registerEvent(
-      this.app.workspace.on("layout-change", this.updateWorkspaceName)
-    );
+    this.registerEvent(this.app.workspace.on("layout-change", this.updateWorkspaceName));
 
-    this.registerEvent(
-        this.app.workspace.on("resize", this.updateWorkspaceName)
-    );
+    this.registerEvent(this.app.workspace.on("resize", this.updateWorkspaceName));
 
     this.changeWorkspaceButton.addEventListener("click", () => {
       new WorkspacePickerPluginModal(this.app, this.settings).open();
@@ -48,17 +44,30 @@ export default class WorkspacePicker extends Plugin {
 
   updateWorkspaceName = () => {
     this.changeWorkspaceButton.setText(this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""));
-  }
+  };
 
-  isWorkspaceModified = () =>  {
-    try { var { active, ...currentWorkspace } = this.app.workspace.getLayout(); } catch { return false } // remove the active property since we don't need it for comparison
+  isWorkspaceModified = () => {
+    try { // this is to catch an on-resize related error when loading a new workspace
+      var {...currentWorkspace } = this.app.workspace.getLayout();
+    } catch {
+      return false;
+    } // remove the active property since we don't need it for comparison
     var activeWorkspaceName = this.workspacePlugin.activeWorkspace, // active workspace name
-      { active, ...savedWorkspace } = this.workspacePlugin.workspaces[activeWorkspaceName];
+      {...savedWorkspace } = this.workspacePlugin.workspaces[activeWorkspaceName];
+    deleteProp(savedWorkspace, ["active", "dimension", "width"]);
+    deleteProp(currentWorkspace, ["active", "dimension", "width"]);
     return !deepEqual(currentWorkspace, savedWorkspace); // via the fast-equals package
-  }
-
+  };
 }
 
-function wait(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+function deleteProp(obj: Workspaces, matches: string | string[]) {
+  if (typeof matches === "string") matches = [matches];
+  matches.forEach(match => {
+    delete obj[match];
+    for (let v of Object.values(obj)) {
+      if (v instanceof Object) {
+        deleteProp(v, match);
+      }
+    }
+  });
 }

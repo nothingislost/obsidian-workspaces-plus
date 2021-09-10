@@ -3,6 +3,28 @@
   width: unset;
 }
 
+.workspace-item.is-selected {
+  background-color: var(--background-secondary);
+}
+
+.rename-workspace {
+  display: inline-block;
+  position: absolute;
+  right: 1.2em;
+  margin-top: 0.3em;
+  fill: rgb(85, 85, 85);
+}
+
+.workspace-item {
+  display: inline-block;
+  width: 100%;
+  padding: 5px 2em 5px 1em;
+  font-size: 16px;
+  position: relative;
+  cursor: pointer;
+  white-space: normal;
+}
+
 .workspace-picker-color-scheme-icon > svg {
   fill: var(--text-muted);
 }
@@ -25,4 +47,10 @@
 .status-bar .plugin-workspace-picker .icon svg {
   vertical-align: text-top;
   margin-right: 2px;
+}
+
+.workspace-picker-modal .workspace-item[contenteditable="true"] {
+  cursor: text;
+  border: 1px solid #777;
+  border-radius: 6px;
 }
