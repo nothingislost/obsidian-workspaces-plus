@@ -1,4 +1,4 @@
-import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch } from "obsidian";
+import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
 
@@ -215,10 +215,12 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   saveAndStay() {
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     this.workspacePlugin.saveWorkspace(workspaceName);
+    new Notice("Successfully saved workspace: " + workspaceName)
   }
 
   saveAndSwitch() {
     this.workspacePlugin.saveWorkspace(this.activeWorkspace);
+    new Notice("Successfully saved workspace: " + this.activeWorkspace)
   }
 
   deleteWorkspace() {
@@ -246,15 +248,6 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     // );
   }
 
-  // t.createEl("kbd", {
-  //   cls: "suggestion-hotkey",
-  //   text: je("interface.label-enter-to-create")
-  // }),
-
-  // renderSuggestion = function(e, t) {
-  //   Vk(t, this.getItemText(e.item), e.match)
-  // },
-
   renderSuggestion(item: FuzzyMatch<any>, el: HTMLElement) {
     super.renderSuggestion(item, el);
     var newDiv = document.createElement("div");
@@ -264,29 +257,30 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     newDiv.appendChild(el);
     const resultEl = document.body.querySelector("div.workspace-picker-modal div.prompt-results");
     resultEl.appendChild(newDiv);
-    const foo = newDiv.createDiv("rename-workspace");
-    foo.addEventListener("click", event => {
-      event.stopPropagation();
-      // newDiv.onClickEvent(function(e) {
-      //   e.stopPropagation();
-      // });
-      if (el.contentEditable === "true") {
-        el.textContent = el.dataset.workspaceName;
-        el.contentEditable = "false";
-        return;
-      } else {
-        el.contentEditable = "true";
-      }
-      const selection = window.getSelection();
-      const range = document.createRange();
-      selection.removeAllRanges();
-      range.selectNodeContents(el);
-      range.collapse(false);
-      selection.addRange(range);
-      el.focus();
-    });
+    const renameIcon = newDiv.createDiv("rename-workspace");
+    renameIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M12.9 6.858l4.242 4.243L7.242 21H3v-4.243l9.9-9.9zm1.414-1.414l2.121-2.122a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414l-2.122 2.121-4.242-4.242z"/></svg>`;
+    renameIcon.addEventListener("click", event => this.onRenameClick(event, el));
+    const deleteIcon = newDiv.createDiv("delete-workspace");
+    deleteIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 4V2h10v2h5v2h-2v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6H2V4h5zM6 6v14h12V6H6zm3 3h2v8H9V9zm4 0h2v8h-2V9z"/></svg>`;
+    deleteIcon.addEventListener("click", event => this.deleteWorkspace());
+  }
 
-    foo.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M12.9 6.858l4.242 4.243L7.242 21H3v-4.243l9.9-9.9zm1.414-1.414l2.121-2.122a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414l-2.122 2.121-4.242-4.242z"/></svg>`;
+  onRenameClick = function(evt: MouseEvent | KeyboardEvent, el: HTMLElement) {
+    evt.stopPropagation();
+    if (el.contentEditable === "true") {
+      el.textContent = el.dataset.workspaceName;
+      el.contentEditable = "false";
+      return;
+    } else {
+      el.contentEditable = "true";
+    }
+    const selection = window.getSelection();
+    const range = document.createRange();
+    selection.removeAllRanges();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    selection.addRange(range);
+    el.focus();
   }
 
   doDelete(workspaceName: string) {

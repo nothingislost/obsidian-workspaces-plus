@@ -1,4 +1,4 @@
-import { Plugin, WorkspacePluginInstance, setIcon, Workspaces } from "obsidian";
+import { Plugin, WorkspacePluginInstance, setIcon, Workspaces, Notice } from "obsidian";
 import { WorkspacePickerSettings, WorkspacePickerSettingsTab } from "./settings";
 import WorkspacePickerPluginModal from "workspace-picker-modal";
 import { deepEqual } from "fast-equals";
@@ -28,7 +28,12 @@ export default class WorkspacePicker extends Plugin {
         text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
         prepend: false,
       });
-      workspacePickerStatusBarItem.addEventListener("click", () => {
+      workspacePickerStatusBarItem.addEventListener("click", (evt) => {
+        if (evt.shiftKey === true) {
+          this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+          new Notice("Successfully saved workspace.")
+          return;
+        }
         new WorkspacePickerPluginModal(this.app, this.settings).open();
       });
     }, 100);
