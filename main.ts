@@ -63,8 +63,10 @@ export default class WorkspacePicker extends Plugin {
     } catch {
       return false;
     } // remove the active property since we don't need it for comparison
-    var activeWorkspaceName = this.workspacePlugin.activeWorkspace, // active workspace name
-    savedWorkspace = JSON.parse(JSON.stringify(this.workspacePlugin.workspaces[activeWorkspaceName]))
+    var activeWorkspaceName = this.workspacePlugin.activeWorkspace // active workspace name
+    if (!Object.keys(this.workspacePlugin.workspaces).includes(activeWorkspaceName))
+      return true
+    var savedWorkspace = JSON.parse(JSON.stringify(this.workspacePlugin.workspaces[activeWorkspaceName]))
     deleteProp(savedWorkspace, ["active", "dimension", "width"]);
     deleteProp(currentWorkspace, ["active", "dimension", "width"]);
     return !deepEqual(currentWorkspace, savedWorkspace); // via the fast-equals package

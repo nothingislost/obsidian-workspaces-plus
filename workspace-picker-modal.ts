@@ -296,7 +296,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   }
 
   getItems(): any[] {
-    return [...Object.keys(this.workspacePlugin.workspaces)];
+    return [...Object.keys(this.workspacePlugin.workspaces).sort()];
   }
 
   getItemText(item: any): string {
