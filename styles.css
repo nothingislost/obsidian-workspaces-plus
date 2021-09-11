@@ -1,74 +1,95 @@
-.workspace-picker-modal {
-  box-shadow: 0px 0px 17px 0px rgb(0 0 0 / 25%);
+.workspaces-plus-modal {
+  box-shadow: 0px 0px 17px 4px var(--background-modifier-box-shadow);
+  z-index: var(--layer-menu);
   width: unset;
 }
 
 .workspace-item.is-selected {
   background-color: var(--background-secondary);
+  border-radius: 0.2em;
 }
 
 .rename-workspace {
   display: inline-block;
   position: absolute;
   right: 2.6em;
-  margin-top: 0.3em;
-  fill: rgb(85, 85, 85);
+  margin-top: 0.5em;
+  fill: var(--text-muted);
+  opacity: 0;
 }
 
 .active-workspace {
   display: inline-block;
   position: absolute;
-  left: 1.26em;
+  left: 1em;
   margin-top: 0.5em;
-  fill: rgb(85, 85, 85);
+  fill: var(--text-muted);
   z-index: 2;
+}
+
+.rename-workspace,
+.delete-workspace {
+  cursor: pointer;
+}
+
+.rename-workspace:hover,
+.delete-workspace:hover {
+  fill: var(--text-accent-hover);
+}
+
+.workspace-results {padding: 0 .1em;}
+
+.workspace-results:hover .rename-workspace,
+.workspace-results:hover .delete-workspace {
+  opacity: 1;
 }
 
 .delete-workspace {
   display: inline-block;
   position: absolute;
   right: 1.2em;
-  margin-top: 0.3em;
-  fill: rgb(85, 85, 85);
+  margin-top: 0.5em;
+  fill: var(--text-muted);
+  opacity: 0;
 }
 
 .workspace-item {
   display: inline-block;
   width: 100%;
-  padding: 5px 3.5em 5px 2.4em;
+  padding: 5px 3.5em 5px 2em;
   font-size: 16px;
   position: relative;
   cursor: pointer;
   white-space: normal;
+  border: 1px solid transparent;
 }
 
-.workspace-picker-color-scheme-icon > svg {
+.workspaces-plus-color-scheme-icon > svg {
   fill: var(--text-muted);
 }
 
-.workspace-picker-color-scheme-icon:hover > svg {
+.workspaces-plus-color-scheme-icon:hover > svg {
   fill: var(--text-normal);
 }
 
-.status-bar .plugin-workspace-picker .status-bar-item-segment.icon {
-  /* margin-right: 2px;
-  vertical-align: middle; */
+.status-bar .plugin-workspaces-plus .status-bar-item-segment.icon {
   position: absolute;
-  /* margin-top: 1px; */
 }
 
-.status-bar .plugin-workspace-picker .status-bar-item-segment.name {
+.status-bar .plugin-workspaces-plus .status-bar-item-segment.name {
   margin-left: 1.4em;
 }
 
-.status-bar .plugin-workspace-picker .icon svg {
+.status-bar .plugin-workspaces-plus .icon svg {
   height: 16px;
   width: 16px;
   vertical-align: text-top;
 }
 
-.workspace-picker-modal .workspace-item[contenteditable="true"]:focus {
+.workspaces-plus-modal .workspace-item[contenteditable="true"]:focus {
   cursor: text;
-  border: 1px solid #777;
-  border-radius: 6px;
+  border: 1px solid var(--interactive-accent);
+  background-color: var(--background-modifier-form-field);
+  border-radius: 0.2em;
+  box-shadow: 0 0 0 0.1px rgba(0, 0, 0, 0.1), 0 0 0 3px hsla(var(--accent-hsl), 0.15);
 }

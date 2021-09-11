@@ -1,7 +1,6 @@
 import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
-import { WorkspacePickerSettings } from "./settings";
-import { settings } from "cluster";
+import { WorkspacesPlusSettings } from "./settings";
 
 declare module "obsidian" {
   export interface FuzzySuggestModal<T> {
@@ -101,21 +100,21 @@ export function createConfirmationDialog({ cta, onAccept, text, title }: IConfir
   new ConfirmationModal(window.app, { cta, onAccept, text, title }).open();
 }
 
-export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string> {
+export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
   activeWorkspace: string;
   popper: PopperInstance;
-  settings: WorkspacePickerSettings;
+  settings: WorkspacesPlusSettings;
   showInstructions: boolean = false;
   emptyStateText: string = "No match found. Use Shift ↵ to save as...";
 
-  constructor(app: App, settings: WorkspacePickerSettings) {
+  constructor(app: App, settings: WorkspacesPlusSettings) {
     super(app);
     this.settings = settings;
 
     //@ts-ignore
     this.bgEl.setAttribute("style", "background-color: transparent");
-    this.modalEl.classList.add("workspace-picker-modal");
+    this.modalEl.classList.add("workspaces-plus-modal");
     this.resultContainerEl.on("click", ".workspace-item", this.onSuggestionClick.bind(this));
     this.resultContainerEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
     this.setPlaceholder("Type workspace name...");
@@ -165,7 +164,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   open = () => {
     (<any>this.app).keymap.pushScope(this.scope);
     document.body.appendChild(this.containerEl);
-    this.popper = createPopper(document.body.querySelector(".plugin-workspace-picker"), this.modalEl, {
+    this.popper = createPopper(document.body.querySelector(".plugin-workspaces-plus"), this.modalEl, {
       placement: "top-start",
       modifiers: [{ name: "offset", options: { offset: [0, 10] } }],
     });
@@ -175,11 +174,12 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   onOpen() {
     super.onOpen();
     this.activeWorkspace = this.workspacePlugin.activeWorkspace;
-    let selectedIdx = this.getItems().findIndex(workspace => workspace === this.activeWorkspace);
+    // let selectedIdx = this.getItems().findIndex(workspace => workspace === this.activeWorkspace);
+    let selectedIdx = 0; // default to the first item
     this.chooser.setSelectedItem(selectedIdx);
     this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded();
     document.body
-      .querySelector(".workspace-picker-modal>.prompt-input")
+      .querySelector(".workspaces-plus-modal>.prompt-input")
       .addEventListener("input", () => this.popper.update());
   }
 
@@ -216,12 +216,12 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   saveAndStay() {
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     this.workspacePlugin.saveWorkspace(workspaceName);
-    new Notice("Successfully saved workspace: " + workspaceName)
+    new Notice("Successfully saved workspace: " + workspaceName);
   }
 
   saveAndSwitch() {
     this.workspacePlugin.saveWorkspace(this.activeWorkspace);
-    new Notice("Successfully saved workspace: " + this.activeWorkspace)
+    new Notice("Successfully saved workspace: " + this.activeWorkspace);
   }
 
   deleteWorkspace() {
@@ -240,7 +240,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
       this.doDelete(workspaceName);
     }
     // this.popper = createPopper(
-    //   document.body.querySelector(".plugin-workspace-picker"),
+    //   document.body.querySelector(".plugin-workspaces-plus"),
     //   document.body.querySelector(".workspace-delete-confirm-modal"),
     //   {
     //     placement: "top",
@@ -252,6 +252,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
   renderSuggestion(item: FuzzyMatch<any>, el: HTMLElement) {
     super.renderSuggestion(item, el);
     var newDiv = document.createElement("div");
+    newDiv.addClass("workspace-results");
     el.dataset.workspaceName = el.textContent;
     el.removeClass("suggestion-item");
     el.addClass("workspace-item");
@@ -260,7 +261,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
       activeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"/></svg>`;
     }
     newDiv.appendChild(el);
-    const resultEl = document.body.querySelector("div.workspace-picker-modal div.prompt-results");
+    const resultEl = document.body.querySelector("div.workspaces-plus-modal div.prompt-results");
     resultEl.appendChild(newDiv);
     const renameIcon = newDiv.createDiv("rename-workspace");
     renameIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M12.9 6.858l4.242 4.243L7.242 21H3v-4.243l9.9-9.9zm1.414-1.414l2.121-2.122a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414l-2.122 2.121-4.242-4.242z"/></svg>`;
@@ -270,7 +271,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     deleteIcon.addEventListener("click", event => this.deleteWorkspace());
   }
 
-  onRenameClick = function(evt: MouseEvent | KeyboardEvent, el: HTMLElement) {
+  onRenameClick = function (evt: MouseEvent | KeyboardEvent, el: HTMLElement) {
     evt.stopPropagation();
     if (el.contentEditable === "true") {
       el.textContent = el.dataset.workspaceName;
@@ -286,7 +287,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     range.collapse(false);
     selection.addRange(range);
     el.focus();
-  }
+  };
 
   doDelete(workspaceName: string) {
     let currentSelection = this.chooser.selectedItem;
@@ -313,8 +314,7 @@ export default class WorkspacePickerPluginModal extends FuzzySuggestModal<string
     else if (this.settings.saveOnSwitch) {
       this.workspacePlugin.saveWorkspace(this.activeWorkspace);
       this.loadWorkspace(item);
-    }
-    else this.loadWorkspace(item);
+    } else this.loadWorkspace(item);
   }
 
   setWorkspace(workspaceName: string) {

@@ -1,17 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import WorkspacePicker from "./main";
+import WorkspacesPlus from "./main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 
-export class WorkspacePickerSettings {
+export class WorkspacesPlusSettings {
   showInstructions = true;
   showDeletePrompt = true;
   saveOnSwitch = false;
+  showModification = false;
 }
 
-export class WorkspacePickerSettingsTab extends PluginSettingTab {
-  plugin: WorkspacePicker;
+export class WorkspacesPlusSettingsTab extends PluginSettingTab {
+  plugin: WorkspacesPlus;
 
-  constructor(app: App, plugin: WorkspacePicker) {
+  constructor(app: App, plugin: WorkspacesPlus) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -21,7 +22,7 @@ export class WorkspacePickerSettingsTab extends PluginSettingTab {
 
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Workspace Picker Options" });
+    containerEl.createEl("h2", { text: "Workspaces Plus" });
 
     new Setting(containerEl)
       .setName("Show instructions")
@@ -49,6 +50,18 @@ export class WorkspacePickerSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.saveOnSwitch).onChange(value => {
           this.plugin.settings.saveOnSwitch = value;
+          this.plugin.saveData(this.plugin.settings);
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Experimental: Show workspace modified indicator")
+      .setDesc(
+        `This option will show an * next to the workspace name in the status bar when the workspace has been modified from its saved state`
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.showModification).onChange(value => {
+          this.plugin.settings.showModification = value;
           this.plugin.saveData(this.plugin.settings);
         })
       );

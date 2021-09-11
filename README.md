@@ -18,7 +18,7 @@ Plugin based off of [Obsidian Theme Picker](https://github.com/kenset/obsidian-t
 	- delete, rename, and create new workspaces
 - * indicates an unsaved workspace
 - `shift-click` status bar icon to save workspace
-- set hotkey to open workspace picker
+- set hotkey to open workspace chooser
 
 ## Plugin Options
 - Toggle instructions on/off
@@ -27,4 +27,4 @@ Plugin based off of [Obsidian Theme Picker](https://github.com/kenset/obsidian-t
 
 ### Manually installing the plugin
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-workspace-picker/`.
+- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-workspaces-plus/`.
