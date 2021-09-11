@@ -6,7 +6,11 @@ Idea inspiration via: @Johnny ✨
 
 Plugin based off of [Obsidian Theme Picker](https://github.com/kenset/obsidian-theme-picker) by @Kenset
 
+<img width="618" alt="image" src="https://user-images.githubusercontent.com/46250921/132934487-ac7bd561-7211-40aa-83c5-97c2fb1bafe0.png">
+
+
 ## How to use
+
 - Open workspace switcher via hotkey or by clicking workspace name in status bar
 - cycle through workspaces with up and down arrows
 - type workspace name to find in list
