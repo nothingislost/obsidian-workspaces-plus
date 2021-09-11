@@ -9,6 +9,7 @@ Plugin based off of [Obsidian Theme Picker](https://github.com/kenset/obsidian-t
 ## How to use
 - Open workspace switcher via hotkey or by clicking workspace name in status bar
 - cycle through workspaces with up and down arrows
+- type workspace name to find in list
 - open workspace with enter or by clicking on workspace with mouse
 
 ## Features
