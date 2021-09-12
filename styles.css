@@ -4,6 +4,10 @@
   width: unset;
 }
 
+.workspaces-plus-modal .prompt-instruction:last-child {
+  margin-right: 0px;
+}
+
 .workspace-item.is-selected {
   background-color: var(--background-secondary);
   border-radius: 0.2em;
@@ -37,10 +41,10 @@
   fill: var(--text-accent-hover);
 }
 
-.workspace-results {padding: 0 .1em;}
+.workspace-results {padding: .1em .1em;}
 
-.workspace-results:hover .rename-workspace,
-.workspace-results:hover .delete-workspace {
+.workspace-item.is-selected~.rename-workspace,
+.workspace-item.is-selected~.delete-workspace {
   opacity: 1;
 }
 
@@ -92,4 +96,8 @@
   background-color: var(--background-modifier-form-field);
   border-radius: 0.2em;
   box-shadow: 0 0 0 0.1px rgba(0, 0, 0, 0.1), 0 0 0 3px hsla(var(--accent-hsl), 0.15);
+}
+
+.workspace-item[contenteditable="true"]:focus~div {
+  display: none;
 }

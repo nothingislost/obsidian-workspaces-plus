@@ -69,8 +69,8 @@ export default class WorkspacesPlus extends Plugin {
     var activeWorkspaceName = this.workspacePlugin.activeWorkspace; // active workspace name
     if (!Object.keys(this.workspacePlugin.workspaces).includes(activeWorkspaceName)) return true;
     var savedWorkspace = JSON.parse(JSON.stringify(this.workspacePlugin.workspaces[activeWorkspaceName]));
-    deleteProp(savedWorkspace, ["active", "dimension", "width"]);
-    deleteProp(currentWorkspace, ["active", "dimension", "width"]);
+    deleteProp(savedWorkspace, ["active", "dimension", "width", "pane-relief:history-v1"]);
+    deleteProp(currentWorkspace, ["active", "dimension", "width", "pane-relief:history-v1"]);
     return !deepEqual(currentWorkspace, savedWorkspace); // via the fast-equals package
   };
 }

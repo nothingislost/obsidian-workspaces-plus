@@ -1,4 +1,4 @@
-import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice } from "obsidian";
+import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice, Scope } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { WorkspacesPlusSettings } from "./settings";
 
@@ -111,7 +111,8 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
   constructor(app: App, settings: WorkspacesPlusSettings) {
     super(app);
     this.settings = settings;
-
+    //@ts-ignore
+    this.bgEl.parentElement.setAttribute("style", "background-color: transparent !important");
     //@ts-ignore
     this.bgEl.setAttribute("style", "background-color: transparent");
     this.modalEl.classList.add("workspaces-plus-modal");
@@ -138,12 +139,30 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
         },
       ]);
     }
-    //@ts-ignore
-    this.scope.unregister(this.scope.keys[3]); // TODO: remove the existing enter keybinding more gracefully
+    this.scope = new Scope();
+    this.scope.register([], "Escape", evt => this.onEscape(evt));
     this.scope.register([], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Shift"], "Delete", this.deleteWorkspace.bind(this));
     this.scope.register(["Shift"], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Alt"], "Enter", evt => this.useSelectedItem(evt));
+    this.scope.register([], "ArrowUp", evt => {
+      if (!evt.isComposing) return this.chooser.setSelectedItem(this.chooser.selectedItem - 1), !1;
+    });
+    this.scope.register([], "ArrowDown", evt => {
+      if (!evt.isComposing) return this.chooser.setSelectedItem(this.chooser.selectedItem + 1), !1;
+    });
+  }
+
+  onEscape(evt: MouseEvent | KeyboardEvent) {
+    const evtTargetEl = evt.target as HTMLElement;
+    // if we're actively renaming a workspace, escape out of the rename
+    if (evtTargetEl.classList.contains("workspace-item") && evtTargetEl.contentEditable === "true") {
+      evtTargetEl.textContent = evtTargetEl.dataset.workspaceName;
+      evtTargetEl.contentEditable = "false";
+      return;
+    }
+    // otherwise, close the modal
+    this.close();
   }
 
   onSuggestionClick = function (evt: MouseEvent | KeyboardEvent, itemEl: HTMLElement) {
@@ -162,7 +181,7 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
   };
 
   open = () => {
-    (<any>this.app).keymap.pushScope(this.scope);
+    this.app.keymap.pushScope(this.scope);
     document.body.appendChild(this.containerEl);
     this.popper = createPopper(document.body.querySelector(".plugin-workspaces-plus"), this.modalEl, {
       placement: "top-start",
@@ -196,7 +215,10 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
       const newName = targetEl.textContent;
       this.workspacePlugin.deleteWorkspace(originalName);
       this.workspacePlugin.saveWorkspace(newName);
-      if (originalName === this.activeWorkspace) this.setWorkspace(newName);
+      if (originalName === this.activeWorkspace) {
+        this.setWorkspace(newName);
+        this.activeWorkspace = newName;
+      }
       this.chooser.chooser.updateSuggestions();
       targetEl.contentEditable = "false";
       this.app.workspace.trigger("layout-change");
