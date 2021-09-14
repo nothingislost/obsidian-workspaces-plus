@@ -26,7 +26,7 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Show instructions")
-      .setDesc(`Show instructions on the workspace dropdown that explain the various keyboard shortcuts`)
+      .setDesc(`Show available keyboard shortcuts at the bottom of the workspace quick switcher`)
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.showInstructions).onChange(value => {
           this.plugin.settings.showInstructions = value;

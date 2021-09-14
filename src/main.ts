@@ -21,6 +21,9 @@ export default class WorkspacesPlus extends Plugin {
       // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
       const WorkspacesPlusStatusBarItem = this.addStatusBarItem();
       WorkspacesPlusStatusBarItem.addClass("mod-clickable");
+      WorkspacesPlusStatusBarItem.ariaLabel = "Switch workspaces"
+      WorkspacesPlusStatusBarItem.setAttribute("aria-label-position", "top");
+      // WorkspacesPlusStatusBarItem.ariaLa = "Workspace Picker"
       const icon = WorkspacesPlusStatusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
       setIcon(icon, "pane-layout"); //pane-layout
 
@@ -32,6 +35,7 @@ export default class WorkspacesPlus extends Plugin {
       WorkspacesPlusStatusBarItem.addEventListener("click", evt => {
         if (evt.shiftKey === true) {
           this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+          this.app.workspace.trigger("layout-change");
           new Notice("Successfully saved workspace.");
           return;
         }
@@ -46,7 +50,7 @@ export default class WorkspacesPlus extends Plugin {
     this.addCommand({
       id: "open-workspaces-plus",
       name: "Open Workspaces Plus",
-      callback: () => new WorkspacesPlusPluginModal(this.app, this.settings).open(),
+      callback: () => new WorkspacesPlusPluginModal(this.app, this.settings, true).open(),
     });
   }
 
@@ -69,8 +73,8 @@ export default class WorkspacesPlus extends Plugin {
     var activeWorkspaceName = this.workspacePlugin.activeWorkspace; // active workspace name
     if (!Object.keys(this.workspacePlugin.workspaces).includes(activeWorkspaceName)) return true;
     var savedWorkspace = JSON.parse(JSON.stringify(this.workspacePlugin.workspaces[activeWorkspaceName]));
-    deleteProp(savedWorkspace, ["active", "dimension", "width", "pane-relief:history-v1"]);
-    deleteProp(currentWorkspace, ["active", "dimension", "width", "pane-relief:history-v1"]);
+    deleteProp(savedWorkspace, ["active", "dimension", "width", "pane-relief:history-v1", "eState"]);
+    deleteProp(currentWorkspace, ["active", "dimension", "width", "pane-relief:history-v1", "eState"]);
     return !deepEqual(currentWorkspace, savedWorkspace); // via the fast-equals package
   };
 }

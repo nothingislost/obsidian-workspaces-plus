@@ -1,6 +1,9 @@
 .workspaces-plus-modal {
   box-shadow: 0px 0px 17px 4px var(--background-modifier-box-shadow);
   z-index: var(--layer-menu);
+}
+
+.workspaces-plus-modal.quick-switch {
   width: unset;
 }
 
@@ -41,10 +44,12 @@
   fill: var(--text-accent-hover);
 }
 
-.workspace-results {padding: .1em .1em;}
+.workspace-results {
+  padding: 0.1em 0.1em;
+}
 
-.workspace-item.is-selected~.rename-workspace,
-.workspace-item.is-selected~.delete-workspace {
+.workspace-item.is-selected ~ .rename-workspace,
+.workspace-item.is-selected ~ .delete-workspace {
   opacity: 1;
 }
 
@@ -98,6 +103,6 @@
   box-shadow: 0 0 0 0.1px rgba(0, 0, 0, 0.1), 0 0 0 3px hsla(var(--accent-hsl), 0.15);
 }
 
-.workspace-item[contenteditable="true"]:focus~div {
+.workspace-item[contenteditable="true"]:focus ~ div {
   display: none;
 }

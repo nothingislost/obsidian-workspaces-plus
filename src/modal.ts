@@ -106,20 +106,25 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
   popper: PopperInstance;
   settings: WorkspacesPlusSettings;
   showInstructions: boolean = false;
+  invokedViaHotkey: boolean;
   emptyStateText: string = "No match found. Use Shift ↵ to save as...";
 
-  constructor(app: App, settings: WorkspacesPlusSettings) {
+  constructor(app: App, settings: WorkspacesPlusSettings, hotkey: boolean = false) {
     super(app);
     this.settings = settings;
+    this.invokedViaHotkey = hotkey;
     //@ts-ignore
     this.bgEl.parentElement.setAttribute("style", "background-color: transparent !important");
-    //@ts-ignore
-    this.bgEl.setAttribute("style", "background-color: transparent");
+    if (!this.invokedViaHotkey) {
+      //@ts-ignore
+      this.bgEl.setAttribute("style", "background-color: transparent");
+      this.modalEl.classList.add("quick-switch");
+    }
     this.modalEl.classList.add("workspaces-plus-modal");
     this.resultContainerEl.on("click", ".workspace-item", this.onSuggestionClick.bind(this));
     this.resultContainerEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
     this.setPlaceholder("Type workspace name...");
-    if (settings.showInstructions) {
+    if (settings.showInstructions || this.invokedViaHotkey) {
       this.setInstructions([
         {
           command: "Shift ↵",
@@ -181,12 +186,14 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
   };
 
   open = () => {
-    this.app.keymap.pushScope(this.scope);
+    (<any>this.app).keymap.pushScope(this.scope);
     document.body.appendChild(this.containerEl);
-    this.popper = createPopper(document.body.querySelector(".plugin-workspaces-plus"), this.modalEl, {
-      placement: "top-start",
-      modifiers: [{ name: "offset", options: { offset: [0, 10] } }],
-    });
+    if (!this.invokedViaHotkey) {
+      this.popper = createPopper(document.body.querySelector(".plugin-workspaces-plus"), this.modalEl, {
+        placement: "top-start",
+        modifiers: [{ name: "offset", options: { offset: [0, 10] } }],
+      });
+    }
     this.onOpen();
   };
 
@@ -197,9 +204,11 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     let selectedIdx = 0; // default to the first item
     this.chooser.setSelectedItem(selectedIdx);
     this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded();
-    document.body
-      .querySelector(".workspaces-plus-modal>.prompt-input")
-      .addEventListener("input", () => this.popper.update());
+    if (!this.invokedViaHotkey) {
+      document.body
+        .querySelector(".workspaces-plus-modal>.prompt-input")
+        .addEventListener("input", () => this.popper.update());
+    }
   }
 
   onClose() {
@@ -286,9 +295,13 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     const resultEl = document.body.querySelector("div.workspaces-plus-modal div.prompt-results");
     resultEl.appendChild(newDiv);
     const renameIcon = newDiv.createDiv("rename-workspace");
+    renameIcon.ariaLabel = "Rename workspace";
+    renameIcon.setAttribute("aria-label-position", "top");
     renameIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M12.9 6.858l4.242 4.243L7.242 21H3v-4.243l9.9-9.9zm1.414-1.414l2.121-2.122a1 1 0 0 1 1.414 0l2.829 2.829a1 1 0 0 1 0 1.414l-2.122 2.121-4.242-4.242z"/></svg>`;
     renameIcon.addEventListener("click", event => this.onRenameClick(event, el));
     const deleteIcon = newDiv.createDiv("delete-workspace");
+    deleteIcon.ariaLabel = "Delete workspace";
+    deleteIcon.setAttribute("aria-label-position", "top");
     deleteIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 4V2h10v2h5v2h-2v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6H2V4h5zM6 6v14h12V6H6zm3 3h2v8H9V9zm4 0h2v8h-2V9z"/></svg>`;
     deleteIcon.addEventListener("click", event => this.deleteWorkspace());
   }
