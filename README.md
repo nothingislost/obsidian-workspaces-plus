@@ -10,16 +10,16 @@ Workspaces Plus is a plugin that expands the functionality of [workspaces](https
 - click on workspace name in status bar to open workspace picker menu 
 - `*` indicates an unsaved workspace
 - `shift-click` status bar icon or workspace name to save the workspace
-<img src="https://user-images.githubusercontent.com/46250921/133325073-af2d58ec-e8a1-48fb-a48c-792b348235fd.png" width="500">
+<img src="https://user-images.githubusercontent.com/46250921/133325073-af2d58ec-e8a1-48fb-a48c-792b348235fd.png" width="350">
 
 **Workspace Picker**
 - switch, delete, rename, and create new workspaces
-<img src="https://user-images.githubusercontent.com/46250921/133325287-94a36543-f0ee-4956-9ad5-91c572e5b3c4.png" width="500">
+<img src="https://user-images.githubusercontent.com/46250921/133325287-94a36543-f0ee-4956-9ad5-91c572e5b3c4.png" width="350">
 
 **Workspace Switcher modal**
 - open with assignable hotkey
 - switch, delete, rename, and create new workspaces
-<img src="https://user-images.githubusercontent.com/46250921/133325396-bc429aa5-696f-4e44-8e78-4a9bd504867e.png" width="500">
+<img src="https://user-images.githubusercontent.com/46250921/133325396-bc429aa5-696f-4e44-8e78-4a9bd504867e.png" width="400">
 
 **Hotkeys**
 - open Workspaces Plus switcher modal
