@@ -35,16 +35,15 @@ After enabling the plugin from the settings menu, you will see that a workspace 
 
 ### Creating a Workspace
 You can create a workspace through either the Workspace Picker or the Workspace Switcher modal with the same workflow
-	1. Type your new workspace name into the input field
-	2. Use `shift-enter` to create the new workspace
+1. Type your new workspace name into the input field
+2. Use `shift-enter` to create the new workspace
 ### Renaming a Workspace
 Rename workspaces from the picker or modal by clicking on the pencil icon next to the workspace name
 ### Deleting a Workspace
 Workspaces can be deleted by either using the trach can icon next to the workspaces name or pressing the shortcut `shift-delete` while the workspace is selected in the menu
 ### Opening a Workspace
 1. Open the Workspace Switcher via hotkey or click on the workspace icon or name in status bar to open the Workspace Picker
-2. You can open a workspace by clicking on it with your mouse or by clicking enter after navigating to it with either the up/down arrows on your keyboard
-
+2. You can open a workspace by clicking on it with your mouse or by pressing enter after navigating to it with the up/down arrows on your keyboard
 ### Saving Workspaces
 - By default, workspaces are not automatically saved when switched
 - You can save a workspace with `shift-click` on the workspace icon or name in the status bar
