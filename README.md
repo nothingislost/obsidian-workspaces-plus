@@ -1,6 +1,6 @@
 # Workspaces Plus
 
-![Artboard-2](https://user-images.githubusercontent.com/46250921/133324794-a630de28-8c9d-4df6-b769-94ef996eb098.png)
+![Artboard-2-3](https://user-images.githubusercontent.com/46250921/133352216-e0a2c9b6-070b-46f7-9a6f-d3a18f0c69b1.png)
 
 Workspaces Plus is a plugin that expands the functionality of [workspaces](https://help.obsidian.md/Plugins/Workspaces) in [Obsidian](https://obsidian.md/). 
 
