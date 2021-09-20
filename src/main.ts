@@ -1,6 +1,6 @@
 import { Plugin, WorkspacePluginInstance, setIcon, Workspaces, Notice } from "obsidian";
 import { WorkspacesPlusSettings, WorkspacesPlusSettingsTab } from "./settings";
-import WorkspacesPlusPluginModal from "./modal";
+import { WorkspacesPlusPluginModal } from "./modal";
 import { deepEqual } from "fast-equals";
 
 export default class WorkspacesPlus extends Plugin {

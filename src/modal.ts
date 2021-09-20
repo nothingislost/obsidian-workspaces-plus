@@ -100,7 +100,7 @@ export function createConfirmationDialog({ cta, onAccept, text, title }: IConfir
   new ConfirmationModal(window.app, { cta, onAccept, text, title }).open();
 }
 
-export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
+export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
   activeWorkspace: string;
   popper: PopperInstance;
@@ -108,19 +108,24 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
   showInstructions: boolean = false;
   invokedViaHotkey: boolean;
   emptyStateText: string = "No match found. Use Shift ↵ to save as...";
+  bgEl: HTMLElement;
 
   constructor(app: App, settings: WorkspacesPlusSettings, hotkey: boolean = false) {
     super(app);
+    // Cloning as a hacky way to get rid of the default onInput handler so that
+    // we can use our own onInput method
+    const inputElClone = this.inputEl.cloneNode() as HTMLInputElement;
+    this.modalEl.replaceChild(inputElClone, this.inputEl);
+    this.inputEl = inputElClone;
     this.settings = settings;
     this.invokedViaHotkey = hotkey;
-    //@ts-ignore
     this.bgEl.parentElement.setAttribute("style", "background-color: transparent !important");
     if (!this.invokedViaHotkey) {
-      //@ts-ignore
       this.bgEl.setAttribute("style", "background-color: transparent");
       this.modalEl.classList.add("quick-switch");
     }
     this.modalEl.classList.add("workspaces-plus-modal");
+    this.inputEl.addEventListener("input", this.onInputChanged.bind(this));
     this.resultContainerEl.on("click", ".workspace-item", this.onSuggestionClick.bind(this));
     this.resultContainerEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
     this.setPlaceholder("Type workspace name...");
@@ -156,6 +161,10 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     this.scope.register([], "ArrowDown", evt => {
       if (!evt.isComposing) return this.chooser.setSelectedItem(this.chooser.selectedItem + 1), !1;
     });
+  }
+
+  onInputChanged(): void {
+    this.chooser.chooser.updateSuggestions();
   }
 
   onEscape(evt: MouseEvent | KeyboardEvent) {
@@ -204,14 +213,10 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     let selectedIdx = 0; // default to the first item
     this.chooser.setSelectedItem(selectedIdx);
     this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded();
-    if (!this.invokedViaHotkey) {
-      document.body
-        .querySelector(".workspaces-plus-modal>.prompt-input")
-        .addEventListener("input", () => this.popper.update());
-    }
   }
 
   onClose() {
+    (<any>this.app).keymap.popScope(this.scope);
     super.onClose();
     this.app.workspace.trigger("layout-change");
   }
@@ -220,6 +225,7 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     // @ts-ignore
     const targetEl = evt.path[0];
     if (targetEl.contentEditable === "true") {
+      targetEl.parentElement.parentElement.removeClass("renaming");
       const originalName = targetEl.dataset.workspaceName;
       const newName = targetEl.textContent;
       this.workspacePlugin.deleteWorkspace(originalName);
@@ -231,6 +237,8 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
       this.chooser.chooser.updateSuggestions();
       targetEl.contentEditable = "false";
       this.app.workspace.trigger("layout-change");
+      let selectedIdx = this.getItems().findIndex((workspace: string) => workspace === newName);
+      this.chooser.setSelectedItem(selectedIdx);
       return;
     }
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
@@ -270,30 +278,28 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     } else {
       this.doDelete(workspaceName);
     }
-    // this.popper = createPopper(
-    //   document.body.querySelector(".plugin-workspaces-plus"),
-    //   document.body.querySelector(".workspace-delete-confirm-modal"),
-    //   {
-    //     placement: "top",
-    //     modifiers: [{ name: "offset", options: { offset: [0, 10] } }],
-    //   }
-    // );
   }
 
   renderSuggestion(item: FuzzyMatch<any>, el: HTMLElement) {
     super.renderSuggestion(item, el);
-    var newDiv = document.createElement("div");
-    newDiv.addClass("workspace-results");
-    el.dataset.workspaceName = el.textContent;
-    el.removeClass("suggestion-item");
-    el.addClass("workspace-item");
-    if (el.textContent === this.workspacePlugin.activeWorkspace) {
-      const activeIcon = newDiv.createDiv("active-workspace");
-      activeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"/></svg>`;
-    }
-    newDiv.appendChild(el);
     const resultEl = document.body.querySelector("div.workspaces-plus-modal div.prompt-results");
-    resultEl.appendChild(newDiv);
+    const existingEl = resultEl.querySelector('div[data-workspace-name="' + el.textContent + '"]');
+    let newDiv;
+    if (!existingEl) {
+      newDiv = document.createElement("div");
+      newDiv.addClass("workspace-results");
+      el.dataset.workspaceName = el.textContent;
+      el.removeClass("suggestion-item");
+      el.addClass("workspace-item");
+      if (el.textContent === this.workspacePlugin.activeWorkspace) {
+        const activeIcon = newDiv.createDiv("active-workspace");
+        activeIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M10 15.172l9.192-9.193 1.415 1.414L10 18l-6.364-6.364 1.414-1.414z"/></svg>`;
+      }
+      newDiv.appendChild(el);
+      resultEl.appendChild(newDiv);
+    } else {
+      newDiv = existingEl;
+    }
     const renameIcon = newDiv.createDiv("rename-workspace");
     renameIcon.ariaLabel = "Rename workspace";
     renameIcon.setAttribute("aria-label-position", "top");
@@ -308,6 +314,7 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
 
   onRenameClick = function (evt: MouseEvent | KeyboardEvent, el: HTMLElement) {
     evt.stopPropagation();
+    el.parentElement.parentElement.addClass("renaming");
     if (el.contentEditable === "true") {
       el.textContent = el.dataset.workspaceName;
       el.contentEditable = "false";
@@ -322,6 +329,10 @@ export default class WorkspacesPlusPluginModal extends FuzzySuggestModal<string>
     range.collapse(false);
     selection.addRange(range);
     el.focus();
+    el.onblur = ev => {
+      el.parentElement.parentElement.removeClass("renaming");
+      el.contentEditable = "false";
+    };
   };
 
   doDelete(workspaceName: string) {

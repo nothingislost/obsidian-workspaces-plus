@@ -1,6 +1,6 @@
 {
   "name": "obsidian-workspaces-plus",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Quickly switch and manage workspaces",
   "main": "main.js",
   "scripts": {

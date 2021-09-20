@@ -11,7 +11,7 @@
   margin-right: 0px;
 }
 
-.workspace-item.is-selected {
+.prompt-results:not(.renaming) .workspace-item.is-selected {
   background-color: var(--background-secondary);
   border-radius: 0.2em;
 }
@@ -28,7 +28,7 @@
 .active-workspace {
   display: inline-block;
   position: absolute;
-  left: 1em;
+  left: 0.5em;
   margin-top: 0.5em;
   fill: var(--text-muted);
   z-index: 2;
@@ -46,10 +46,11 @@
 
 .workspace-results {
   padding: 0.1em 0.1em;
+  position: relative;
 }
 
-.workspace-item.is-selected ~ .rename-workspace,
-.workspace-item.is-selected ~ .delete-workspace {
+.prompt-results:not(.renaming) .workspace-item.is-selected ~ .rename-workspace,
+.prompt-results:not(.renaming) .workspace-item.is-selected ~ .delete-workspace {
   opacity: 1;
 }
 
@@ -65,7 +66,7 @@
 .workspace-item {
   display: inline-block;
   width: 100%;
-  padding: 5px 3.5em 5px 2em;
+  padding: 5px 4em 5px 2em;
   font-size: 16px;
   position: relative;
   cursor: pointer;
