@@ -7,6 +7,7 @@ export class WorkspacesPlusSettings {
   showDeletePrompt = true;
   saveOnSwitch = false;
   showModification = false;
+  saveOnChange = false;
 }
 
 export class WorkspacesPlusSettingsTab extends PluginSettingTab {
@@ -45,11 +46,14 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
       );
 
     new Setting(containerEl)
-      .setName("Always save current workspace on workspace switch")
-      .setDesc(`This option will always save your current workspace state prior to switching workspaces`)
+      .setName("Auto save the current workspace on layout change")
+      .setDesc(
+        `This option will auto save your current workspace on any layout change.
+                Leave this disabled if you want full control over when your workspace is saved.`
+      )
       .addToggle(toggle =>
-        toggle.setValue(this.plugin.settings.saveOnSwitch).onChange(value => {
-          this.plugin.settings.saveOnSwitch = value;
+        toggle.setValue(this.plugin.settings.saveOnChange).onChange(value => {
+          this.plugin.settings.saveOnChange = value;
           this.plugin.saveData(this.plugin.settings);
         })
       );

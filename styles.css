@@ -11,6 +11,12 @@
   margin-right: 0px;
 }
 
+.status-bar-item.plugin-workspaces-plus.mod-clickable {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .prompt-results:not(.renaming) .workspace-item.is-selected {
   background-color: var(--background-secondary);
   border-radius: 0.2em;

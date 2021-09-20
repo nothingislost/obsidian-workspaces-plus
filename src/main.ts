@@ -11,37 +11,42 @@ export default class WorkspacesPlus extends Plugin {
   async onload() {
     // load settings
     this.settings = (await this.loadData()) || new WorkspacesPlusSettings();
-
+    // temporary logic to transition the save on switch setting to save on change
+    if (this.settings.saveOnSwitch && this.settings.saveOnChange === undefined) {
+      this.settings.saveOnChange = true;
+      this.saveData(this.settings);
+    }
     // add the settings tab
     this.addSettingTab(new WorkspacesPlusSettingsTab(this.app, this));
 
     this.workspacePlugin = this.app.internalPlugins.getPluginById("workspaces").instance as WorkspacePluginInstance;
 
-    setTimeout(() => {
-      // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
-      const WorkspacesPlusStatusBarItem = this.addStatusBarItem();
-      WorkspacesPlusStatusBarItem.addClass("mod-clickable");
-      WorkspacesPlusStatusBarItem.ariaLabel = "Switch workspaces"
-      WorkspacesPlusStatusBarItem.setAttribute("aria-label-position", "top");
-      // WorkspacesPlusStatusBarItem.ariaLa = "Workspace Picker"
-      const icon = WorkspacesPlusStatusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
-      setIcon(icon, "pane-layout"); //pane-layout
+    this.app.workspace.onLayoutReady(() => {
+      setTimeout(() => {
+        // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
+        const WorkspacesPlusStatusBarItem = this.addStatusBarItem();
+        WorkspacesPlusStatusBarItem.addClass("mod-clickable");
+        WorkspacesPlusStatusBarItem.ariaLabel = "Switch workspaces";
+        WorkspacesPlusStatusBarItem.setAttribute("aria-label-position", "top");
+        const icon = WorkspacesPlusStatusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
+        setIcon(icon, "pane-layout"); //pane-layout
 
-      this.changeWorkspaceButton = WorkspacesPlusStatusBarItem.createSpan({
-        cls: "status-bar-item-segment name",
-        text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
-        prepend: false,
-      });
-      WorkspacesPlusStatusBarItem.addEventListener("click", evt => {
-        if (evt.shiftKey === true) {
-          this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
-          this.app.workspace.trigger("layout-change");
-          new Notice("Successfully saved workspace.");
-          return;
-        }
-        new WorkspacesPlusPluginModal(this.app, this.settings).open();
-      });
-    }, 100);
+        this.changeWorkspaceButton = WorkspacesPlusStatusBarItem.createSpan({
+          cls: "status-bar-item-segment name",
+          text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
+          prepend: false,
+        });
+        WorkspacesPlusStatusBarItem.addEventListener("click", evt => {
+          if (evt.shiftKey === true) {
+            this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+            this.app.workspace.trigger("layout-change");
+            new Notice("Successfully saved workspace.");
+            return;
+          }
+          new WorkspacesPlusPluginModal(this.app, this.settings).open();
+        });
+      }, 100);
+    });
 
     this.registerEvent(this.app.workspace.on("layout-change", this.updateWorkspaceName));
 
@@ -56,10 +61,13 @@ export default class WorkspacesPlus extends Plugin {
 
   updateWorkspaceName = () => {
     setTimeout(() => {
+      if (this.settings.saveOnChange) {
+        this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+      }
       this.changeWorkspaceButton.setText(
         this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : "")
       );
-    }, 100);
+    }, 1000);
   };
 
   isWorkspaceModified = () => {

@@ -153,13 +153,24 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     this.scope.register([], "Escape", evt => this.onEscape(evt));
     this.scope.register([], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Shift"], "Delete", this.deleteWorkspace.bind(this));
+    this.scope.register(["Ctrl"], "Enter", evt => this.onRenameClick(evt, null));
     this.scope.register(["Shift"], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register(["Alt"], "Enter", evt => this.useSelectedItem(evt));
     this.scope.register([], "ArrowUp", evt => {
-      if (!evt.isComposing) return this.chooser.setSelectedItem(this.chooser.selectedItem - 1), !1;
+      if (!evt.isComposing)
+        return (
+          this.chooser.setSelectedItem(this.chooser.selectedItem - 1),
+          !1,
+          this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded()
+        );
     });
     this.scope.register([], "ArrowDown", evt => {
-      if (!evt.isComposing) return this.chooser.setSelectedItem(this.chooser.selectedItem + 1), !1;
+      if (!evt.isComposing)
+        return (
+          this.chooser.setSelectedItem(this.chooser.selectedItem + 1),
+          !1,
+          this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded()
+        );
     });
   }
 
@@ -209,10 +220,10 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   onOpen() {
     super.onOpen();
     this.activeWorkspace = this.workspacePlugin.activeWorkspace;
-    // let selectedIdx = this.getItems().findIndex(workspace => workspace === this.activeWorkspace);
-    let selectedIdx = 0; // default to the first item
+    let selectedIdx = this.getItems().findIndex(workspace => workspace === this.activeWorkspace);
+    // let selectedIdx = 0; // default to the first item
     this.chooser.setSelectedItem(selectedIdx);
-    this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded();
+    this.chooser.suggestions[this.chooser.selectedItem]?.scrollIntoViewIfNeeded();
   }
 
   onClose() {
@@ -314,6 +325,8 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
 
   onRenameClick = function (evt: MouseEvent | KeyboardEvent, el: HTMLElement) {
     evt.stopPropagation();
+    //@ts-ignore
+    if (!el) el = this.chooser.suggestions[this.chooser.selectedItem];
     el.parentElement.parentElement.addClass("renaming");
     if (el.contentEditable === "true") {
       el.textContent = el.dataset.workspaceName;
