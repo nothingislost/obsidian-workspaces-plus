@@ -8,7 +8,6 @@ Workspaces Plus is a plugin that expands the functionality of [workspaces](https
 **Workspace Indicator**
 - current active workspace shown in status bar
 - click on workspace name in status bar to open workspace picker menu 
-- `*` indicates an unsaved workspace
 - `shift-click` status bar icon or workspace name to save the workspace
 <img src="https://user-images.githubusercontent.com/46250921/133325073-af2d58ec-e8a1-48fb-a48c-792b348235fd.png" width="350">
 
@@ -28,7 +27,6 @@ Workspaces Plus is a plugin that expands the functionality of [workspaces](https
 - Toggle keyboard shortcuts on/off for Workspace Picker
 - Toggle workspace delete confirmation on/off
 - Set default workspace switch behavior to always save when switching
-- Show workspace modified indicator
 
 ## How to use
 After enabling the plugin from the settings menu, you will see that a workspace icon has been added to the status bar in the lower right corner of the interface. If you are already using workspaces in Obsidian, you will notice that the name of your current active workspace is located next to the that icon.
