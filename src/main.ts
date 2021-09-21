@@ -1,7 +1,6 @@
-import { Plugin, WorkspacePluginInstance, setIcon, Workspaces, Notice } from "obsidian";
+import { Plugin, WorkspacePluginInstance, setIcon, Workspaces, Notice, debounce } from "obsidian";
 import { WorkspacesPlusSettings, WorkspacesPlusSettingsTab } from "./settings";
 import { WorkspacesPlusPluginModal } from "./modal";
-import { deepEqual } from "fast-equals";
 
 export default class WorkspacesPlus extends Plugin {
   settings: WorkspacesPlusSettings;
@@ -59,23 +58,18 @@ export default class WorkspacesPlus extends Plugin {
     });
   }
 
-  onLayoutChange = () => {
-    setTimeout(() => {
-      if (this.settings.saveOnChange) {
-        this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
-      }
-    }, 1000);
-  };
-}
+  debouncedSave = debounce(
+    // avoid overly serializing the workspace during expensive operations like window resize
+    () => {
+      this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+    },
+    2000,
+    true
+  );
 
-function deleteProp(obj: Workspaces, matches: string | string[]) {
-  if (typeof matches === "string") matches = [matches];
-  matches.forEach(match => {
-    delete obj[match];
-    for (let v of Object.values(obj)) {
-      if (v instanceof Object) {
-        deleteProp(v, match);
-      }
+  onLayoutChange = () => {
+    if (this.settings.saveOnChange) {
+      this.debouncedSave();
     }
-  });
+  };
 }
