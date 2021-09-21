@@ -33,6 +33,9 @@ Workspaces Plus is a plugin that expands the functionality of [workspaces](https
 ## How to use
 After enabling the plugin from the settings menu, you will see that a workspace icon has been added to the status bar in the lower right corner of the interface. If you are already using workspaces in Obsidian, you will notice that the name of your current active workspace is located next to the that icon.
 
+> :warning: **Obsidian's core workspace plugin must be activated for Workspaces Plus to work properly**
+
+
 ### Creating a Workspace
 You can create a workspace through either the Workspace Picker or the Workspace Switcher modal with the same workflow
 1. Type your new workspace name into the input field
