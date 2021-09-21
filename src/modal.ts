@@ -96,8 +96,7 @@ export class ConfirmationModal extends Modal {
 }
 
 export function createConfirmationDialog({ cta, onAccept, text, title }: IConfirmationDialogParams): void {
-  // @ts-ignore
-  new ConfirmationModal(window.app, { cta, onAccept, text, title }).open();
+  new ConfirmationModal(this.app, { cta, onAccept, text, title }).open();
 }
 
 export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
@@ -129,26 +128,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     this.resultContainerEl.on("click", ".workspace-item", this.onSuggestionClick.bind(this));
     this.resultContainerEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
     this.setPlaceholder("Type workspace name...");
-    if (settings.showInstructions || this.invokedViaHotkey) {
-      this.setInstructions([
-        {
-          command: "Shift ↵",
-          purpose: "save and return",
-        },
-        {
-          command: "Alt ↵",
-          purpose: "save and switch",
-        },
-        {
-          command: "Shift ⌫",
-          purpose: "delete",
-        },
-        {
-          command: "esc",
-          purpose: "cancel",
-        },
-      ]);
-    }
+    this.buildInstructions();
     this.scope = new Scope();
     this.scope.register([], "Escape", evt => this.onEscape(evt));
     this.scope.register([], "Enter", evt => this.useSelectedItem(evt));
@@ -172,6 +152,46 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
           this.chooser.suggestions[this.chooser.selectedItem].scrollIntoViewIfNeeded()
         );
     });
+  }
+
+  buildInstructions() {
+    if (this.settings.showInstructions || this.invokedViaHotkey) {
+      let instructions;
+      if (!this.settings.saveOnChange) {
+        instructions = [
+          {
+            command: "shift ↵",
+            purpose: "save and return",
+          },
+          {
+            command: "alt ↵",
+            purpose: "save and switch",
+          },
+        ];
+      } else {
+        instructions = [
+          {
+            command: "↵",
+            purpose: "switch",
+          },
+        ];
+      }
+      instructions.push(
+        {
+          command: "ctrl ↵",
+          purpose: "rename",
+        },
+        {
+          command: "shift ⌫",
+          purpose: "delete",
+        },
+        {
+          command: "esc",
+          purpose: "cancel",
+        }
+      );
+      this.setInstructions(instructions);
+    }
   }
 
   onInputChanged(): void {
@@ -232,24 +252,28 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     this.app.workspace.trigger("layout-change");
   }
 
+  handleRename(targetEl: HTMLElement) {
+    targetEl.parentElement.parentElement.removeClass("renaming");
+    const originalName = targetEl.dataset.workspaceName;
+    const newName = targetEl.textContent;
+    this.workspacePlugin.deleteWorkspace(originalName);
+    this.workspacePlugin.saveWorkspace(newName);
+    if (originalName === this.activeWorkspace) {
+      this.setWorkspace(newName);
+      this.activeWorkspace = newName;
+    }
+    this.chooser.chooser.updateSuggestions();
+    targetEl.contentEditable = "false";
+    this.app.workspace.trigger("layout-change");
+    let selectedIdx = this.getItems().findIndex((workspace: string) => workspace === newName);
+    this.chooser.setSelectedItem(selectedIdx);
+  }
+
   useSelectedItem = function (evt: MouseEvent | KeyboardEvent) {
     // @ts-ignore
     const targetEl = evt.path[0];
     if (targetEl.contentEditable === "true") {
-      targetEl.parentElement.parentElement.removeClass("renaming");
-      const originalName = targetEl.dataset.workspaceName;
-      const newName = targetEl.textContent;
-      this.workspacePlugin.deleteWorkspace(originalName);
-      this.workspacePlugin.saveWorkspace(newName);
-      if (originalName === this.activeWorkspace) {
-        this.setWorkspace(newName);
-        this.activeWorkspace = newName;
-      }
-      this.chooser.chooser.updateSuggestions();
-      targetEl.contentEditable = "false";
-      this.app.workspace.trigger("layout-change");
-      let selectedIdx = this.getItems().findIndex((workspace: string) => workspace === newName);
-      this.chooser.setSelectedItem(selectedIdx);
+      this.handleRename(targetEl);
       return;
     }
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;

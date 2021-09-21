@@ -68,6 +68,7 @@ export default class WorkspacesPlus extends Plugin {
   );
 
   onLayoutChange = () => {
+    this.changeWorkspaceButton.setText(this.workspacePlugin.activeWorkspace);
     if (this.settings.saveOnChange) {
       this.debouncedSave();
     }
