@@ -10,11 +10,13 @@ export default class WorkspacesPlus extends Plugin {
   async onload() {
     // load settings
     this.settings = (await this.loadData()) || new WorkspacesPlusSettings();
+
     // temporary logic to transition the save on switch setting to save on change
     if (this.settings.saveOnSwitch && this.settings.saveOnChange === undefined) {
       this.settings.saveOnChange = true;
       this.saveData(this.settings);
     }
+
     // add the settings tab
     this.addSettingTab(new WorkspacesPlusSettingsTab(this.app, this));
 
@@ -22,33 +24,11 @@ export default class WorkspacesPlus extends Plugin {
 
     this.app.workspace.onLayoutReady(() => {
       setTimeout(() => {
-        // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
-        const statusBarItem = this.addStatusBarItem();
-        statusBarItem.addClass("mod-clickable");
-        statusBarItem.ariaLabel = "Switch workspaces";
-        statusBarItem.setAttribute("aria-label-position", "top");
-        const icon = statusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
-        setIcon(icon, "pane-layout"); //pane-layout
-
-        this.changeWorkspaceButton = statusBarItem.createSpan({
-          cls: "status-bar-item-segment name",
-          text: this.workspacePlugin.activeWorkspace,
-          prepend: false,
-        });
-        statusBarItem.addEventListener("click", evt => {
-          if (evt.shiftKey === true) {
-            this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
-            this.app.workspace.trigger("layout-change");
-            new Notice("Successfully saved workspace.");
-            return;
-          }
-          new WorkspacesPlusPluginModal(this.app, this.settings).open();
-        });
+        this.addStatusBarIndicator.apply(this);
       }, 100);
     });
 
     this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChange));
-
     this.registerEvent(this.app.workspace.on("resize", this.onLayoutChange));
 
     this.addCommand({
@@ -57,6 +37,42 @@ export default class WorkspacesPlus extends Plugin {
       callback: () => new WorkspacesPlusPluginModal(this.app, this.settings, true).open(),
     });
   }
+
+  addStatusBarIndicator() {
+    const statusBarItem = this.addStatusBarItem();
+    statusBarItem.addClass("mod-clickable");
+    statusBarItem.setAttribute("aria-label", "Switch workspaces");
+    statusBarItem.setAttribute("aria-label-position", "top");
+    // create the status bar icon
+    const icon = statusBarItem.createSpan("status-bar-item-segment icon");
+    setIcon(icon, "pane-layout"); // inject svg icon
+    // create the status bar text
+    this.changeWorkspaceButton = statusBarItem.createSpan({
+      cls: "status-bar-item-segment name",
+      text: this.workspacePlugin.activeWorkspace,
+      prepend: false,
+    });
+    // register click handler
+    statusBarItem.addEventListener("click", evt => this.onStatusBarClick(evt));
+  }
+
+  onStatusBarClick(evt: MouseEvent) {
+    // handle the shift click to save current workspace shortcut
+    if (evt.shiftKey === true) {
+      this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+      this.app.workspace.trigger("layout-change");
+      new Notice("Successfully saved workspace.");
+      return;
+    }
+    // otherwise, open the modal
+    new WorkspacesPlusPluginModal(this.app, this.settings).open();
+  }
+
+  setWorkspaceName = debounce(
+    () => this.changeWorkspaceButton?.setText(this.workspacePlugin.activeWorkspace),
+    100,
+    true
+  );
 
   debouncedSave = debounce(
     // avoid overly serializing the workspace during expensive operations like window resize
@@ -68,7 +84,7 @@ export default class WorkspacesPlus extends Plugin {
   );
 
   onLayoutChange = () => {
-    this.changeWorkspaceButton.setText(this.workspacePlugin.activeWorkspace);
+    this.setWorkspaceName();
     if (this.settings.saveOnChange) {
       this.debouncedSave();
     }

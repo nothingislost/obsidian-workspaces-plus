@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import WorkspacesPlus from "./main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 
