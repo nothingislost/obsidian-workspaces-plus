@@ -196,12 +196,12 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
       return;
     }
     evt.preventDefault();
-    var item = this.chooser.suggestions.indexOf(itemEl);
+    let item = this.chooser.suggestions.indexOf(itemEl);
     this.chooser.setSelectedItem(item), this.useSelectedItem(evt);
   };
 
   onSuggestionMouseover = function (evt: MouseEvent | KeyboardEvent, itemEl: HTMLElement) {
-    var item = this.chooser.suggestions.indexOf(itemEl);
+    let item = this.chooser.suggestions.indexOf(itemEl);
     this.chooser.setSelectedItem(item);
   };
 
@@ -259,7 +259,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
       this.close();
       return !1;
     } else if (!this.chooser.values) return !1;
-    var item = this.chooser.values ? this.chooser.values[this.chooser.selectedItem] : workspaceName;
+    let item = this.chooser.values ? this.chooser.values[this.chooser.selectedItem] : workspaceName;
     return void 0 !== item && (this.selectSuggestion(item, evt), !0);
   };
 

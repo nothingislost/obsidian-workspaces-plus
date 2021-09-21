@@ -6,7 +6,6 @@ export class WorkspacesPlusSettings {
   showInstructions = true;
   showDeletePrompt = true;
   saveOnSwitch = false;
-  showModification = false;
   saveOnChange = false;
 }
 
@@ -54,18 +53,6 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.saveOnChange).onChange(value => {
           this.plugin.settings.saveOnChange = value;
-          this.plugin.saveData(this.plugin.settings);
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Experimental: Show workspace modified indicator")
-      .setDesc(
-        `This option will show an * next to the workspace name in the status bar when the workspace has been modified from its saved state`
-      )
-      .addToggle(toggle =>
-        toggle.setValue(this.plugin.settings.showModification).onChange(value => {
-          this.plugin.settings.showModification = value;
           this.plugin.saveData(this.plugin.settings);
         })
       );

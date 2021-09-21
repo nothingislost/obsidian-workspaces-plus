@@ -24,19 +24,19 @@ export default class WorkspacesPlus extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       setTimeout(() => {
         // TODO: dirty hack to delay load and make sure our icon is always in the bottom right
-        const WorkspacesPlusStatusBarItem = this.addStatusBarItem();
-        WorkspacesPlusStatusBarItem.addClass("mod-clickable");
-        WorkspacesPlusStatusBarItem.ariaLabel = "Switch workspaces";
-        WorkspacesPlusStatusBarItem.setAttribute("aria-label-position", "top");
-        const icon = WorkspacesPlusStatusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
+        const statusBarItem = this.addStatusBarItem();
+        statusBarItem.addClass("mod-clickable");
+        statusBarItem.ariaLabel = "Switch workspaces";
+        statusBarItem.setAttribute("aria-label-position", "top");
+        const icon = statusBarItem.createSpan("status-bar-item-segment icon mod-clickable");
         setIcon(icon, "pane-layout"); //pane-layout
 
-        this.changeWorkspaceButton = WorkspacesPlusStatusBarItem.createSpan({
+        this.changeWorkspaceButton = statusBarItem.createSpan({
           cls: "status-bar-item-segment name",
-          text: this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : ""),
+          text: this.workspacePlugin.activeWorkspace,
           prepend: false,
         });
-        WorkspacesPlusStatusBarItem.addEventListener("click", evt => {
+        statusBarItem.addEventListener("click", evt => {
           if (evt.shiftKey === true) {
             this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
             this.app.workspace.trigger("layout-change");
@@ -48,9 +48,9 @@ export default class WorkspacesPlus extends Plugin {
       }, 100);
     });
 
-    this.registerEvent(this.app.workspace.on("layout-change", this.updateWorkspaceName));
+    this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChange));
 
-    this.registerEvent(this.app.workspace.on("resize", this.updateWorkspaceName));
+    this.registerEvent(this.app.workspace.on("resize", this.onLayoutChange));
 
     this.addCommand({
       id: "open-workspaces-plus",
@@ -59,31 +59,12 @@ export default class WorkspacesPlus extends Plugin {
     });
   }
 
-  updateWorkspaceName = () => {
+  onLayoutChange = () => {
     setTimeout(() => {
       if (this.settings.saveOnChange) {
         this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
       }
-      this.changeWorkspaceButton.setText(
-        this.workspacePlugin.activeWorkspace + (this.isWorkspaceModified() ? "*" : "")
-      );
     }, 1000);
-  };
-
-  isWorkspaceModified = () => {
-    if (!this.settings.showModification) return false;
-    try {
-      // this is to catch an on-resize related error when loading a new workspace
-      var currentWorkspace = JSON.parse(JSON.stringify(this.app.workspace.getLayout()));
-    } catch {
-      return false;
-    } // remove the active property since we don't need it for comparison
-    var activeWorkspaceName = this.workspacePlugin.activeWorkspace; // active workspace name
-    if (!Object.keys(this.workspacePlugin.workspaces).includes(activeWorkspaceName)) return true;
-    var savedWorkspace = JSON.parse(JSON.stringify(this.workspacePlugin.workspaces[activeWorkspaceName]));
-    deleteProp(savedWorkspace, ["active", "dimension", "width", "pane-relief:history-v1", "eState"]);
-    deleteProp(currentWorkspace, ["active", "dimension", "width", "pane-relief:history-v1", "eState"]);
-    return !deepEqual(currentWorkspace, savedWorkspace); // via the fast-equals package
   };
 }
 
