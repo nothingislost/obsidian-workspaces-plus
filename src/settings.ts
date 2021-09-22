@@ -8,6 +8,13 @@ export class WorkspacesPlusSettings {
   saveOnChange = false;
 }
 
+export const DEFAULT_SETTINGS: WorkspacesPlusSettings = {
+  showInstructions: true,
+  showDeletePrompt: true,
+  saveOnSwitch: false,
+  saveOnChange: false,
+};
+
 export class WorkspacesPlusSettingsTab extends PluginSettingTab {
   plugin: WorkspacesPlus;
 

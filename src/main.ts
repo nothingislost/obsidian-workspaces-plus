@@ -1,5 +1,5 @@
-import { Plugin, WorkspacePluginInstance, setIcon, Workspaces, Notice, debounce } from "obsidian";
-import { WorkspacesPlusSettings, WorkspacesPlusSettingsTab } from "./settings";
+import { Plugin, WorkspacePluginInstance, setIcon, Notice, debounce } from "obsidian";
+import { WorkspacesPlusSettings, WorkspacesPlusSettingsTab, DEFAULT_SETTINGS } from "./settings";
 import { WorkspacesPlusPluginModal } from "./modal";
 
 export default class WorkspacesPlus extends Plugin {
@@ -9,7 +9,7 @@ export default class WorkspacesPlus extends Plugin {
 
   async onload() {
     // load settings
-    this.settings = (await this.loadData()) || new WorkspacesPlusSettings();
+    await this.loadSettings();
 
     // temporary logic to transition the save on switch setting to save on change
     if (this.settings.saveOnSwitch && this.settings.saveOnChange === undefined) {
@@ -36,6 +36,14 @@ export default class WorkspacesPlus extends Plugin {
       name: "Open Workspaces Plus",
       callback: () => new WorkspacesPlusPluginModal(this.app, this.settings, true).open(),
     });
+  }
+
+  async loadSettings() {
+    this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+  }
+
+  async saveSettings() {
+    await this.saveData(this.settings);
   }
 
   addStatusBarIndicator() {
