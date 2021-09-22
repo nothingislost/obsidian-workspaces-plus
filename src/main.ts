@@ -11,12 +11,6 @@ export default class WorkspacesPlus extends Plugin {
     // load settings
     await this.loadSettings();
 
-    // temporary logic to transition the save on switch setting to save on change
-    if (this.settings.saveOnSwitch && this.settings.saveOnChange === undefined) {
-      this.settings.saveOnChange = true;
-      this.saveData(this.settings);
-    }
-
     // add the settings tab
     this.addSettingTab(new WorkspacesPlusSettingsTab(this.app, this));
 
