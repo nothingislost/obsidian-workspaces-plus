@@ -1,103 +1,8 @@
 import { App, Modal, FuzzySuggestModal, WorkspacePluginInstance, FuzzyMatch, Notice, Scope } from "obsidian";
 import { createPopper, Instance as PopperInstance } from "@popperjs/core";
 import { WorkspacesPlusSettings } from "./settings";
-
-declare module "obsidian" {
-  export interface FuzzySuggestModal<T> {
-    chooser: Chooser<T>;
-    suggestEl: HTMLDivElement;
-  }
-
-  export interface Chooser<T> {
-    setSelectedItem(selectedIdx: number, scroll?: boolean): void;
-    useSelectedItem(evt: MouseEvent | KeyboardEvent): void;
-    values: { [x: string]: { item: any } };
-    selectedItem: number;
-    chooser: Chooser<T>;
-    updateSuggestions(): void;
-    suggestions: { scrollIntoViewIfNeeded: () => void }[];
-  }
-
-  export interface App {
-    internalPlugins: InternalPlugins;
-    viewRegistry: ViewRegistry;
-  }
-
-  export interface InstalledPlugin {
-    enabled: boolean;
-    instance: PluginInstance;
-  }
-
-  export interface InternalPlugins {
-    plugins: Record<string, InstalledPlugin>;
-    getPluginById(id: string): InstalledPlugin;
-  }
-
-  export interface ViewRegistry {
-    viewByType: Record<string, unknown>;
-    isExtensionRegistered(extension: string): boolean;
-  }
-
-  export interface PluginInstance {
-    id: string;
-    name: string;
-    description: string;
-  }
-
-  export interface WorkspacePluginInstance extends PluginInstance {
-    deleteWorkspace(workspaceName: string): void;
-    saveWorkspace(workspaceName: string): void;
-    loadWorkspace(workspaceName: string): void;
-    setActiveWorkspace(workspaceName: string): void;
-    activeWorkspace: string;
-    workspaces: { [x: string]: Workspaces }; // TODO: improve this typing
-  }
-
-  export interface Workspaces {
-    [x: string]: any; // TODO: improve this typing
-  }
-}
-
-interface IConfirmationDialogParams {
-  cta: string;
-  onAccept: (...args: any[]) => Promise<void>;
-  text: string;
-  title: string;
-}
-
-export class ConfirmationModal extends Modal {
-  constructor(app: App, config: IConfirmationDialogParams) {
-    super(app);
-    this.modalEl.addClass("workspace-delete-confirm-modal");
-    const { cta, onAccept, text, title } = config;
-
-    this.contentEl.createEl("h3", { text: title });
-
-    let e: HTMLParagraphElement = this.contentEl.createEl("p", { text });
-    e.id = "workspace-delete-confirm-dialog";
-
-    this.contentEl.createDiv("modal-button-container", buttonsEl => {
-      buttonsEl.createEl("button", { text: "Cancel" }).addEventListener("click", () => this.close());
-
-      const btnSumbit = buttonsEl.createEl("button", {
-        attr: { type: "submit" },
-        cls: "mod-cta",
-        text: cta,
-      });
-      btnSumbit.addEventListener("click", async e => {
-        await onAccept();
-        this.close();
-      });
-      setTimeout(() => {
-        btnSumbit.focus();
-      }, 50);
-    });
-  }
-}
-
-export function createConfirmationDialog(app: App, { cta, onAccept, text, title }: IConfirmationDialogParams): void {
-  new ConfirmationModal(app, { cta, onAccept, text, title }).open();
-}
+import { createConfirmationDialog } from "./confirm";
+import WorkspacesPlus from "./main";
 
 export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   workspacePlugin: WorkspacePluginInstance;
@@ -108,9 +13,12 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   invokedViaHotkey: boolean;
   emptyStateText: string = "No match found. Use Shift ↵ to save as...";
   bgEl: HTMLElement;
+  plugin: WorkspacesPlus;
 
-  constructor(app: App, settings: WorkspacesPlusSettings, hotkey: boolean = false) {
-    super(app);
+  constructor(plugin: WorkspacesPlus, settings: WorkspacesPlusSettings, hotkey: boolean = false) {
+    super(plugin.app);
+    this.app = plugin.app;
+    this.plugin = plugin;
 
     // standard initialization
     this.settings = settings;
@@ -119,7 +27,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     this.setPlaceholder("Type workspace name...");
     this.buildInstructions();
 
-    // temporary styling to force the a transparent modal background to address certain themes
+    // temporary styling to force a transparent modal background to address certain themes
     // that apply a background to the modal container instead of the modal-bg
     this.bgEl.parentElement.setAttribute("style", "background-color: transparent !important");
 
@@ -219,6 +127,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
 
   onSuggestionClick = function (evt: MouseEvent | KeyboardEvent, itemEl: HTMLElement) {
     if (itemEl.contentEditable === "true") {
+      // allow cursor selection in rename mode by ignoring the click
       evt.stopPropagation();
       return;
     }
@@ -255,24 +164,23 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
   onClose(): void {
     (<any>this.app).keymap.popScope(this.scope);
     super.onClose();
-    this.app.workspace.trigger("layout-change");
   }
 
   handleRename(targetEl: HTMLElement): void {
     targetEl.parentElement.parentElement.removeClass("renaming");
     const originalName = targetEl.dataset.workspaceName;
     const newName = targetEl.textContent;
-    this.workspacePlugin.deleteWorkspace(originalName);
-    this.workspacePlugin.saveWorkspace(newName);
+    this.workspacePlugin.workspaces[newName] = this.workspacePlugin.workspaces[originalName]
+    delete this.workspacePlugin.workspaces[originalName]
     if (originalName === this.activeWorkspace) {
       this.setWorkspace(newName);
       this.activeWorkspace = newName;
     }
     this.chooser.chooser.updateSuggestions();
     targetEl.contentEditable = "false";
-    this.app.workspace.trigger("layout-change");
     let selectedIdx = this.getItems().findIndex((workspace: string) => workspace === newName);
     this.chooser.setSelectedItem(selectedIdx, true);
+    this.app.workspace.trigger("workspace-rename", newName, originalName);
   }
 
   useSelectedItem = function (evt: MouseEvent | KeyboardEvent) {
@@ -286,10 +194,10 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
       this.saveAndStay();
       this.setWorkspace(workspaceName);
       this.close();
-      return !1;
-    } else if (!this.chooser.values) return !1;
+      return false;
+    } else if (!this.chooser.values) return false;
     let item = this.chooser.values ? this.chooser.values[this.chooser.selectedItem] : workspaceName;
-    return void 0 !== item && (this.selectSuggestion(item, evt), !0);
+    return void 0 !== item && (this.selectSuggestion(item, evt), true);
   };
 
   saveAndStay(): void {
@@ -300,6 +208,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
 
   saveAndSwitch(): void {
     this.workspacePlugin.saveWorkspace(this.activeWorkspace);
+    this.plugin.registerWorkspaceHotkeys();
     new Notice("Successfully saved workspace: " + this.activeWorkspace);
   }
 
@@ -394,6 +303,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     this.workspacePlugin.deleteWorkspace(workspaceName);
     this.chooser.chooser.updateSuggestions();
     this.chooser.setSelectedItem(currentSelection - 1, true);
+    this.plugin.onWorkspaceDelete(workspaceName);
   }
 
   getItems(): string[] {

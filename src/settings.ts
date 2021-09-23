@@ -25,7 +25,6 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
 
   display(): void {
     const { containerEl } = this;
-
     containerEl.empty();
 
     containerEl.createEl("h2", { text: "Workspaces Plus" });
