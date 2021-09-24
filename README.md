@@ -71,6 +71,9 @@ Share feedback, issues, and ideas on [github](https://github.com/nothingislost/o
 
 ## Changelog
 
+- 0.3.1
+  - Fix bug in workspace rename logic which was preventing hotkey reassignment
+
 - 0.3.0
   - Add hotkey support for loading specific workspaces
     - This feature will create a command for every workspace in your vault, which can then be bound to hotkeys
