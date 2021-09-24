@@ -118,8 +118,8 @@ export default class WorkspacesPlus extends Plugin {
   onWorkspaceRename(name: string, oldName: string) {
     this.setWorkspaceName();
     // remove the old command
-    (this.app as any).commands.removeCommand(oldName);
-    const hotkeys = (this.app as any).hotkeyManager.getHotkeys(oldName);
+    (this.app as any).commands.removeCommand(`${this.manifest.id}:${oldName}`);
+    const hotkeys = (this.app as any).hotkeyManager.getHotkeys(`${this.manifest.id}:${oldName}`);
     // register the new command
     this.registerWorkspaceHotkeys();
     if (hotkeys) {
