@@ -22,11 +22,17 @@ Workspaces Plus is a plugin that expands the functionality of [workspaces](https
 
 **Hotkeys**
 - open Workspaces Plus switcher modal
+- open specific workspace by name
 
 **Plugin Options**
 - Toggle keyboard shortcuts on/off for Workspace Picker
 - Toggle workspace delete confirmation on/off
 - Set default workspace switch behavior to always save when switching
+
+**Theming Options**
+- Workspaces Plus adds a data attribute to the HTML document body which can be used to set workspace specific styling
+  - The data attribute is body[data-workspace-name="My Workspace"]
+  - The attribute will be updated upon the loading of any new workspace
 
 ## How to use
 After enabling the plugin from the settings menu, you will see that a workspace icon has been added to the status bar in the lower right corner of the interface. If you are already using workspaces in Obsidian, you will notice that the name of your current active workspace is located next to the that icon.
@@ -62,3 +68,13 @@ Share feedback, issues, and ideas on [github](https://github.com/nothingislost/o
 ## Credits
 - This plugin is being developed by [Johnny ✨](https://github.com/jsmorabito) and [Nothingislost](https://github.com/nothingislost)
 - Workspace Picker and Modal based off of [Obsidian Theme Picker](https://github.com/kenset/obsidian-theme-picker) by [Kenset](https://github.com/kenset)
+
+## Changelog
+
+- 0.3.0
+  - Add hotkey support for loading specific workspaces
+    - This feature will create a command for every workspace in your vault, which can then be bound to hotkeys
+    - This feature supports renaming workspaces while maintaining the associated hotkey
+    - You can add these workspace load commands to cMenu and workspace renames will automatically update the cMenu button as well
+  - Add a data attribute to the body of the HTML document which indicates the currently active workspace name
+    - The selector looks like this: body[data-workspace-name="My Workspace"]
