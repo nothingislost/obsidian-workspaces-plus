@@ -15,10 +15,19 @@ declare module "obsidian" {
     updateSuggestions(): void;
     suggestions: { scrollIntoViewIfNeeded: () => void }[];
   }
-
+  export interface Vault {
+    getConfig(config: string): unknown;
+    setConfig(config: string, value: unknown): void;
+  }
   export interface App {
     internalPlugins: InternalPlugins;
     viewRegistry: ViewRegistry;
+    getTheme(): string;
+    changeTheme(theme: string): void,
+    customCss: {
+      theme: string,
+      setTheme(theme: string): void,
+    };
     plugins: {
       plugins: {
         "cmenu-plugin": {
@@ -61,6 +70,7 @@ declare module "obsidian" {
   }
 
   export interface Workspace extends Events {
+    updateOptions(): void;
     on(name: "workspace-load", callback: (workspaceName: string) => any, ctx?: any): EventRef;
     on(name: "workspace-save", callback: (workspaceName: string) => any, ctx?: any): EventRef;
     on(name: "workspace-delete", callback: (workspaceName: string) => any, ctx?: any): EventRef;
