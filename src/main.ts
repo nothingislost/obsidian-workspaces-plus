@@ -22,6 +22,7 @@ export default class WorkspacesPlus extends Plugin {
     this.app.workspace.onLayoutReady(() => {
       setTimeout(() => {
         this.registerWorkspaceHotkeys();
+        this.setWorkspaceAttribute();
         this.addStatusBarIndicator.apply(this);
       }, 100);
     });
@@ -33,7 +34,7 @@ export default class WorkspacesPlus extends Plugin {
       )
     );
     this.registerEvent(this.app.workspace.on("workspace-save", (name: string) => this.onWorkspaceSave(name)));
-    this.registerEvent(this.app.workspace.on("workspace-load", (name: string) => this.setWorkspaceName()));
+    this.registerEvent(this.app.workspace.on("workspace-load", (name: string) => this.onWorkspaceLoad(name)));
 
     this.registerEvent(this.app.workspace.on("layout-change", this.onLayoutChange));
     this.registerEvent(this.app.workspace.on("resize", this.onLayoutChange));
@@ -105,6 +106,10 @@ export default class WorkspacesPlus extends Plugin {
     }
   };
 
+  setWorkspaceAttribute() {
+    document.body.dataset.workspaceName = this.workspacePlugin.activeWorkspace;
+  }
+
   onWorkspaceRename(name: string, oldName: string) {
     this.setWorkspaceName();
     // remove the old command
@@ -123,10 +128,10 @@ export default class WorkspacesPlus extends Plugin {
   updateCMenuIcon(name: string, oldName: string) {
     const cMenuPlugin = this.app.plugins.plugins["cmenu-plugin"];
     let cMenuItemIdx = cMenuPlugin?.settings.menuCommands.findIndex(cmd => cmd.id === `${this.manifest.id}:${oldName}`);
-    if (!cMenuPlugin || cMenuItemIdx === -1) return
+    if (!cMenuPlugin || cMenuItemIdx === -1) return;
     let cMenuItems = cMenuPlugin.settings.menuCommands;
-    cMenuItems[cMenuItemIdx].id = `workspaces-plus:${name}`;
-    cMenuItems[cMenuItemIdx].name = `Workspaces Plus: Load Workspace: ${name}`;
+    cMenuItems[cMenuItemIdx].id = `${this.manifest.id}:${name}`;
+    cMenuItems[cMenuItemIdx].name = `${this.manifest.name}: Load: ${name}`;
     cMenuPlugin.saveSettings();
     // rebuild the cMenu toolbar
     dispatchEvent(new Event("cMenu-NewCommand"));
@@ -147,6 +152,11 @@ export default class WorkspacesPlus extends Plugin {
     this.registerWorkspaceHotkeys();
   }
 
+  onWorkspaceLoad(name: string) {
+    this.setWorkspaceName();
+    this.setWorkspaceAttribute();
+  }
+
   registerWorkspaceHotkeys() {
     const workspaceNames = Object.keys(this.workspacePlugin.workspaces);
     for (const workspaceName of workspaceNames) {
@@ -161,6 +171,7 @@ export default class WorkspacesPlus extends Plugin {
   }
 
   installWorkspaceHooks() {
+    // patch the internal workspaces plugin to emit events on save, delete, and load
     this.register(
       around(this.workspacePlugin, {
         saveWorkspace(old) {
