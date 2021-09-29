@@ -57,10 +57,71 @@ Workspaces can be deleted by either using the trach can icon next to the workspa
 - From either switcher menu you can use `shift-enter` to save your current active workspace or `alt-enter` to save your current active workspace and switch to the new one you have selected
 - In the Plugin Options menu (located in Obsidians settings) you can toggle on a setting which will automatically save the active workspace on switch
 
+## Extra
+<details>
+  <summary>Compact Workspace Picker CSS Snippet</summary>
+  
+![image](https://user-images.githubusercontent.com/46250921/135287222-ada674cf-e8e9-4bbf-9d99-07c9892b8e76.png)
+
+  ```css
+.workspaces-plus-modal.quick-switch {
+  padding: 0px;
+  border-radius: 5px;
+  min-width: 13em;
+}
+
+.workspaces-plus-moda.quick-switch .workspace-item {
+  padding-left: 2em;
+  padding-right: 4em;
+  font-size: 0.9em;
+}
+
+.workspaces-plus-modal.quick-switch .prompt-results {
+  padding-top: 0;
+}
+
+.workspaces-plus-modal.quick-switch .prompt-results::-webkit-scrollbar {
+  display: none;
+}
+
+.workspaces-plus-modal.quick-switch .workspace-results {
+  padding: 0px;
+}
+
+.workspaces-plus-modal.quick-switch .workspace-item.is-selected {
+  border-radius: 0px !important;
+}
+
+.workspaces-plus-modal.quick-switch input.prompt-input {
+  font-size: 0.9em;
+  padding: 0px 1em;
+  border-top-left-radius: 5px !important;
+  border-top-right-radius: 5px !important;
+  border-radius: 0px;
+  border: none !important;
+  border-bottom: 1px solid var(--background-modifier-border) !important;
+}
+
+.workspaces-plus-modal.quick-switch input.prompt-input:focus {
+  box-shadow: none;
+  border: none !important;
+  border-bottom: 1px solid var(--background-modifier-border) !important;
+}
+
+.workspaces-plus-modal.quick-switch .delete-workspace {
+  right: 0.7em !important;
+}
+
+.workspaces-plus-modal.quick-switch .rename-workspace {
+  right: 2em !important;
+}
+```
+</details>
+
 ## Installation
 
 - Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/obsidian-workspaces-plus/`.
-- via Obsidian Community Plugins (coming soon)
+- via Obsidian Community Plugins browser
 
 ## Feedback
 Share feedback, issues, and ideas on [github](https://github.com/nothingislost/obsidian-workspaces-plus/issues) or feel free to tag the authors on Discord
