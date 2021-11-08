@@ -124,7 +124,7 @@ Workspaces can be deleted by either using the trach can icon next to the workspa
 - via Obsidian Community Plugins browser
 
 ## Feedback
-Share feedback, issues, and ideas on [github](https://github.com/nothingislost/obsidian-workspaces-plus/issues) or feel free to tag the authors on Discord
+Share feedback, issues, and ideas on [github](https://github.com/nothingislost/obsidian-workspaces-plus/issues), with our [Workspaces Plus feedback survey](https://airtable.com/shrETC7GS1MOYSTAI), or tag the authors on Discord!
 
 ## Credits
 - This plugin is being developed by [Johnny ✨](https://github.com/jsmorabito) and [Nothingislost](https://github.com/nothingislost)
