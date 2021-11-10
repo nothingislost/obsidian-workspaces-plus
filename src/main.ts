@@ -1,3 +1,5 @@
+// workspace metadata saving: work in progress
+
 import { Plugin, WorkspacePluginInstance, setIcon, Notice, debounce } from "obsidian";
 import { WorkspacesPlusSettings, WorkspacesPlusSettingsTab, DEFAULT_SETTINGS } from "./settings";
 import { WorkspacesPlusPluginModal } from "./modal";
@@ -7,8 +9,11 @@ export default class WorkspacesPlus extends Plugin {
   settings: WorkspacesPlusSettings;
   workspacePlugin: WorkspacePluginInstance;
   changeWorkspaceButton: HTMLElement;
+  workspaceLoading: boolean;
+  debug: boolean;
 
   async onload() {
+    this.debug = false;
     // load settings
     await this.loadSettings();
 
@@ -93,16 +98,23 @@ export default class WorkspacesPlus extends Plugin {
 
   debouncedSave = debounce(
     // avoid overly serializing the workspace during expensive operations like window resize
-    () => {
-      this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
+    (workspaceName: string) => {
+      // avoid errors if the debounced save happens in the middle of a workspace switch
+      if (!this.workspaceLoading) {
+        if (this.debug) console.log("layout invoked save: " + this.workspacePlugin.activeWorkspace);
+        try {
+          this.workspacePlugin.saveWorkspace(workspaceName);
+        } catch {}
+      }
     },
     2000,
     true
   );
 
   onLayoutChange = () => {
+    // console.log("pre debounce workspace name: " + this.workspacePlugin.activeWorkspace);
     if (this.settings.saveOnChange) {
-      this.debouncedSave();
+      this.debouncedSave(this.workspacePlugin.activeWorkspace);
     }
   };
 
@@ -147,14 +159,33 @@ export default class WorkspacesPlus extends Plugin {
     }
   }
 
-  onWorkspaceSave(workspaceName: string) {
+  async onWorkspaceSave(workspaceName: string) {
     this.setWorkspaceName();
     this.registerWorkspaceHotkeys();
+    const appSettings = await this.app.vault.readConfigJson("app");
+    const appearanceSettings = await this.app.vault.readConfigJson("appearance");
+    this.workspacePlugin.workspaces[workspaceName]["workspaces-plus:settings-v1"] = {
+      app: appSettings,
+      appearance: appearanceSettings,
+    };
   }
 
   onWorkspaceLoad(name: string) {
+    // console.log("workspace load", this.app.workspace.activeWorkspace);
     this.setWorkspaceName();
     this.setWorkspaceAttribute();
+    const settings = this.workspacePlugin.workspaces[name]["workspaces-plus:settings-v1"];
+    let combinedSettings;
+    if (settings) {
+      combinedSettings = Object.assign({}, settings["app"], settings["appearance"]);
+      if (this.debug) console.log("combined settings", combinedSettings);
+      this.app.vault.config = combinedSettings;
+      this.app.vault.saveConfig();
+      this.app.workspace.updateOptions();
+      this.app.setTheme(this.app.vault.getConfig("theme"));
+      this.app.changeBaseFontSize(this.app.vault.getConfig("baseFontSize")), this.app.customCss.loadData();
+      this.app.customCss.applyCss();
+    }
   }
 
   registerWorkspaceHotkeys() {
@@ -172,27 +203,46 @@ export default class WorkspacesPlus extends Plugin {
 
   installWorkspaceHooks() {
     // patch the internal workspaces plugin to emit events on save, delete, and load
+    const plugin = this;
     this.register(
       around(this.workspacePlugin, {
         saveWorkspace(old) {
-          return async function saveWorkspace(workspaceName, ...etc) {
-            const result = await old.call(this, workspaceName, ...etc);
-            await this.app.workspace.trigger("workspace-save", workspaceName);
+          return function saveWorkspace(workspaceName, ...etc) {
+            // console.log("workspace saved: " + workspaceName);
+            const result = old.call(this, workspaceName, ...etc);
+            this.app.workspace.trigger("workspace-save", workspaceName);
             return result;
           };
         },
         deleteWorkspace(old) {
-          return async function deleteWorkspace(workspaceName, ...etc) {
-            const result = await old.call(this, workspaceName, ...etc);
-            await this.app.workspace.trigger("workspace-delete", workspaceName);
+          return function deleteWorkspace(workspaceName, ...etc) {
+            const result = old.call(this, workspaceName, ...etc);
+            this.app.workspace.trigger("workspace-delete", workspaceName);
             return result;
           };
         },
         loadWorkspace(old) {
-          return async function loadWorkspace(workspaceName, ...etc) {
-            const result = await old.call(this, workspaceName, ...etc);
-            await this.app.workspace.trigger("workspace-load", workspaceName);
-            return result;
+          return function loadWorkspace(workspaceName, ...etc) {
+            if (/^mode:/i.test(workspaceName)) {
+              if (plugin.debug) console.log("mode loader: " + workspaceName);
+              const currentLayout = this.app.workspace.getLayout();
+              const newLayout = plugin.workspacePlugin.workspaces[workspaceName];
+              newLayout["main"] = currentLayout["main"];
+              // this.app.internalPlugins.getPluginById("workspaces").instance.activeWorkspace = workspaceName,
+              this.app.workspace.changeLayout(newLayout), this.app.workspace.trigger("workspace-load", workspaceName);
+            } else {
+              plugin.workspaceLoading = true;
+              setTimeout(() => {
+                plugin.workspaceLoading = false;
+              }, 2500);
+              if (plugin.settings.saveOnChange) {
+                if (plugin.debug) console.log("load invoked save: " + plugin.workspacePlugin.activeWorkspace);
+                plugin.workspacePlugin.saveWorkspace(plugin.workspacePlugin.activeWorkspace);
+              }
+              old.call(this, workspaceName, ...etc);
+              this.app.workspace.trigger("workspace-load", workspaceName);
+            }
+            // return result;
           };
         },
       })
