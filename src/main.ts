@@ -9,8 +9,8 @@ export default class WorkspacesPlus extends Plugin {
   settings: WorkspacesPlusSettings;
   workspacePlugin: WorkspacePluginInstance;
   changeWorkspaceButton: HTMLElement;
-  workspaceLoading: boolean;
   debug: boolean;
+  workspaceLoading: boolean;
 
   async onload() {
     this.debug = false;
@@ -38,6 +38,8 @@ export default class WorkspacesPlus extends Plugin {
         this.onWorkspaceRename(name, oldName)
       )
     );
+
+    this.registerEvent(this.app.vault.on("config-changed", () => this.onConfigChange()));
     this.registerEvent(this.app.workspace.on("workspace-save", (name: string) => this.onWorkspaceSave(name)));
     this.registerEvent(this.app.workspace.on("workspace-load", (name: string) => this.onWorkspaceLoad(name)));
 
@@ -100,21 +102,37 @@ export default class WorkspacesPlus extends Plugin {
     // avoid overly serializing the workspace during expensive operations like window resize
     (workspaceName: string) => {
       // avoid errors if the debounced save happens in the middle of a workspace switch
-      if (!this.workspaceLoading) {
-        if (this.debug) console.log("layout invoked save: " + this.workspacePlugin.activeWorkspace);
-        try {
-          this.workspacePlugin.saveWorkspace(workspaceName);
-        } catch {}
+      if (workspaceName === this.workspacePlugin.activeWorkspace) {
+        if (this.debug) console.log("layout invoked save: " + workspaceName);
+        this.workspacePlugin.saveWorkspace(workspaceName);
+      } else {
+        if (this.debug) console.log("skipped saving because the workspace has been changed");
       }
     },
     2000,
     true
   );
 
+  onConfigChange = () => {
+    if (!this.settings.saveOnChange) return;
+    if (!this.workspaceLoading) {
+      const currentWorkspace = this.workspacePlugin.activeWorkspace;
+      if (this.debug) console.log("config invoked save: " + this.workspacePlugin.activeWorkspace);
+      setTimeout(() => {
+        if (currentWorkspace === this.workspacePlugin.activeWorkspace)
+          this.workspacePlugin.saveWorkspace(currentWorkspace);
+      }, 2000); // wait for app settings to be saved before saving workspace
+    } else {
+      if (this.debug) console.log("skipped save due to recent workspace switch");
+    }
+  };
+
   onLayoutChange = () => {
-    // console.log("pre debounce workspace name: " + this.workspacePlugin.activeWorkspace);
-    if (this.settings.saveOnChange) {
-      this.debouncedSave(this.workspacePlugin.activeWorkspace);
+    if (!this.workspaceLoading) {
+      // console.log("pre debounce workspace name: " + this.workspacePlugin.activeWorkspace);
+      if (this.settings.saveOnChange) {
+        this.debouncedSave(this.workspacePlugin.activeWorkspace);
+      }
     }
   };
 
@@ -162,29 +180,43 @@ export default class WorkspacesPlus extends Plugin {
   async onWorkspaceSave(workspaceName: string) {
     this.setWorkspaceName();
     this.registerWorkspaceHotkeys();
-    const appSettings = await this.app.vault.readConfigJson("app");
-    const appearanceSettings = await this.app.vault.readConfigJson("appearance");
-    this.workspacePlugin.workspaces[workspaceName]["workspaces-plus:settings-v1"] = {
-      app: appSettings,
-      appearance: appearanceSettings,
-    };
+    if (this.settings.workspaceSettings) {
+      let settings = this.workspacePlugin.workspaces[workspaceName];
+      let explorerFoldState = this.app.loadLocalStorage("file-explorer-unfold");
+      const appSettings = await this.app.vault.readConfigJson("app");
+      const appearanceSettings = await this.app.vault.readConfigJson("appearance");
+      if (
+        !explorerFoldState &&
+        settings["workspaces-plus:settings-v1"] &&
+        settings["workspaces-plus:settings-v1"]["explorerFoldState"]
+      )
+        explorerFoldState = [...settings["workspaces-plus:settings-v1"]["explorerFoldState"]];
+      settings["workspaces-plus:settings-v1"] = {
+        app: appSettings,
+        appearance: appearanceSettings,
+        explorerFoldState: explorerFoldState,
+      };
+    }
   }
 
   onWorkspaceLoad(name: string) {
-    // console.log("workspace load", this.app.workspace.activeWorkspace);
-    this.setWorkspaceName();
-    this.setWorkspaceAttribute();
-    const settings = this.workspacePlugin.workspaces[name]["workspaces-plus:settings-v1"];
-    let combinedSettings;
-    if (settings) {
-      combinedSettings = Object.assign({}, settings["app"], settings["appearance"]);
-      if (this.debug) console.log("combined settings", combinedSettings);
-      this.app.vault.config = combinedSettings;
-      this.app.vault.saveConfig();
-      this.app.workspace.updateOptions();
-      this.app.setTheme(this.app.vault.getConfig("theme"));
-      this.app.changeBaseFontSize(this.app.vault.getConfig("baseFontSize")), this.app.customCss.loadData();
-      this.app.customCss.applyCss();
+    this.setWorkspaceName(); // sets status bar text
+    this.setWorkspaceAttribute(); // sets HTML data attribute
+    if (this.settings.workspaceSettings) {
+      const settings = this.workspacePlugin.workspaces[name]["workspaces-plus:settings-v1"];
+      let combinedSettings;
+      if (settings) {
+        if (settings["explorerFoldState"])
+          this.app.saveLocalStorage("file-explorer-unfold", settings["explorerFoldState"]);
+        combinedSettings = Object.assign({}, settings["app"], settings["appearance"]);
+        this.app.vault.config = combinedSettings;
+        this.app.vault.saveConfig();
+        this.app.workspace.updateOptions();
+        this.app.setTheme(this.app.vault.getConfig("theme") as string);
+        this.app.changeBaseFontSize(this.app.vault.getConfig("baseFontSize") as number);
+        this.app.customCss.loadData();
+        this.app.customCss.applyCss();
+      }
     }
   }
 
@@ -208,7 +240,7 @@ export default class WorkspacesPlus extends Plugin {
       around(this.workspacePlugin, {
         saveWorkspace(old) {
           return function saveWorkspace(workspaceName, ...etc) {
-            // console.log("workspace saved: " + workspaceName);
+            if (this.debug) console.log("workspace saved: " + workspaceName);
             const result = old.call(this, workspaceName, ...etc);
             this.app.workspace.trigger("workspace-save", workspaceName);
             return result;
@@ -228,21 +260,32 @@ export default class WorkspacesPlus extends Plugin {
               const currentLayout = this.app.workspace.getLayout();
               const newLayout = plugin.workspacePlugin.workspaces[workspaceName];
               newLayout["main"] = currentLayout["main"];
-              // this.app.internalPlugins.getPluginById("workspaces").instance.activeWorkspace = workspaceName,
-              this.app.workspace.changeLayout(newLayout), this.app.workspace.trigger("workspace-load", workspaceName);
-            } else {
-              plugin.workspaceLoading = true;
-              setTimeout(() => {
-                plugin.workspaceLoading = false;
-              }, 2500);
-              if (plugin.settings.saveOnChange) {
-                if (plugin.debug) console.log("load invoked save: " + plugin.workspacePlugin.activeWorkspace);
-                plugin.workspacePlugin.saveWorkspace(plugin.workspacePlugin.activeWorkspace);
-              }
-              old.call(this, workspaceName, ...etc);
+              this.app.workspace.changeLayout(newLayout);
+              // note: modes do not change this.app.workspace.activeWorkspace
+              this.saveData();
               this.app.workspace.trigger("workspace-load", workspaceName);
+              return;
             }
-            // return result;
+            plugin.workspaceLoading = true;
+            setTimeout(() => {
+              plugin.workspaceLoading = false;
+            }, 2500);
+            const result = old.call(this, workspaceName, ...etc);
+            this.app.workspace.trigger("workspace-load", workspaceName);
+            return result;
+          };
+        },
+      })
+    );
+    this.register(
+      around(this.app, {
+        // this is so we can save the workspace on file explorer fold state change
+        saveLocalStorage(old) {
+          return function saveLocalStorage(e, t, ...etc) {
+            try {
+              plugin.onConfigChange();
+            } catch {}
+            return old.call(this, e, t, ...etc);
           };
         },
       })

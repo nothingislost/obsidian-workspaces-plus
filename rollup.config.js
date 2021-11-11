@@ -1,6 +1,7 @@
 import typescript from '@rollup/plugin-typescript';
 import {nodeResolve} from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
+import copy from 'rollup-plugin-copy-watch'
 
 const isProd = (process.env.BUILD === 'production');
 
@@ -14,8 +15,8 @@ if you want to view the source visit the plugins github repository
 export default {
   input: './src/main.ts',
   output: {
-    dir: '.',
-    sourcemap: 'inline',
+    dir: './dist/',
+    sourcemap: isProd ? 'hidden' : 'inline',
     sourcemapExcludeSources: isProd,
     format: 'cjs',
     exports: 'default',
@@ -26,5 +27,13 @@ export default {
     typescript(),
     nodeResolve({browser: true}),
     commonjs(),
+    copy({
+      watch: ["styles.css", "manifest*.json"],
+      targets: [
+        { src: 'manifest.json', dest: 'dist' },
+        { src: 'manifest-beta.json', dest: 'dist' },
+        { src: 'styles.css', dest: 'dist' }
+      ], flatten: false
+    })
   ]
 };

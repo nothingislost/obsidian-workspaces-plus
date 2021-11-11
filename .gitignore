@@ -22,3 +22,5 @@ data.json
 *.zip
 *.code-workspace
 yarn.lock
+.vscode
+dist

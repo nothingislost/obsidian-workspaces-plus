@@ -21,6 +21,7 @@
     "auto-plugin-obsidian": "^0.1.4",
     "obsidian": "^0.12.0",
     "rollup": "^2.32.1",
+    "rollup-plugin-copy-watch": "^0.0.1",
     "tslib": "^2.2.0",
     "typescript": "4.3.5"
   },

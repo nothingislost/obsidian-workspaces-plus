@@ -2,10 +2,11 @@ import WorkspacesPlus from "./main";
 import { App, PluginSettingTab, Setting } from "obsidian";
 
 export class WorkspacesPlusSettings {
-  showInstructions = true;
-  showDeletePrompt = true;
-  saveOnSwitch = false;
-  saveOnChange = false;
+  showInstructions: boolean;
+  showDeletePrompt: boolean;
+  saveOnSwitch: boolean;
+  saveOnChange: boolean;
+  workspaceSettings: boolean;
 }
 
 export const DEFAULT_SETTINGS: WorkspacesPlusSettings = {
@@ -13,6 +14,7 @@ export const DEFAULT_SETTINGS: WorkspacesPlusSettings = {
   showDeletePrompt: true,
   saveOnSwitch: false,
   saveOnChange: false,
+  workspaceSettings: false,
 };
 
 export class WorkspacesPlusSettingsTab extends PluginSettingTab {
@@ -58,6 +60,20 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.saveOnChange).onChange(value => {
           this.plugin.settings.saveOnChange = value;
+          this.plugin.saveData(this.plugin.settings);
+        })
+      );
+
+    new Setting(containerEl)
+      .setName("Store Obsidian settings per workspace")
+      .setDesc(
+        `This settings will store all of the native Obsidian Editor, Files & Links, 
+        and Appearance settings to each workspace when the workspace is saved.
+        Settings are stored in the workspace metadata and will be loaded along with the workspace.`
+      )
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.workspaceSettings).onChange(value => {
+          this.plugin.settings.workspaceSettings = value;
           this.plugin.saveData(this.plugin.settings);
         })
       );

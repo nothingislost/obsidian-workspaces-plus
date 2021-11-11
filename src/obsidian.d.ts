@@ -18,14 +18,26 @@ declare module "obsidian" {
   export interface Vault {
     getConfig(config: string): unknown;
     setConfig(config: string, value: unknown): void;
+    readConfigJson(section: string): Object;
+    saveConfig(): void;
+    config: Object;
+  }
+  export interface Vault extends Events {
+    on(name: "config-changed", callback: () => any): EventRef;
   }
   export interface App {
+    setTheme(mode: string): void;
     internalPlugins: InternalPlugins;
     viewRegistry: ViewRegistry;
+    loadLocalStorage(setting: string): any;
+    saveLocalStorage(setting: string, values: Object): void;
     getTheme(): string;
-    changeTheme(theme: string): void,
+    changeBaseFontSize(fontSize: number): void;
+    changeTheme(theme: string): void;
     customCss: {
       theme: string,
+      loadData(): void,
+      applyCss(): void,
       setTheme(theme: string): void,
     };
     plugins: {

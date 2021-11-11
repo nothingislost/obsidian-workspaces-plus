@@ -192,7 +192,7 @@ export class WorkspacesPlusPluginModal extends FuzzySuggestModal<string> {
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     if (!this.values && workspaceName && evt.shiftKey) {
       this.saveAndStay();
-      this.setWorkspace(workspaceName);
+      if (!/^mode:/i.test(workspaceName)) this.setWorkspace(workspaceName);
       this.close();
       return false;
     } else if (!this.chooser.values) return false;
