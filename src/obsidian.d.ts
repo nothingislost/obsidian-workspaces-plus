@@ -12,6 +12,9 @@ declare module "obsidian" {
     values: { [x: string]: { item: any } };
     selectedItem: number;
     chooser: Chooser<T>;
+    setSuggestions(items: any[]): void;
+    containerEl: HTMLElement;
+    addMessage(message: string): void;
     updateSuggestions(): void;
     suggestions: { scrollIntoViewIfNeeded: () => void }[];
   }
@@ -26,6 +29,7 @@ declare module "obsidian" {
     on(name: "config-changed", callback: () => any): EventRef;
   }
   export interface App {
+    isMobile(): boolean;
     setTheme(mode: string): void;
     internalPlugins: InternalPlugins;
     viewRegistry: ViewRegistry;
@@ -35,16 +39,16 @@ declare module "obsidian" {
     changeBaseFontSize(fontSize: number): void;
     changeTheme(theme: string): void;
     customCss: {
-      theme: string,
-      loadData(): void,
-      applyCss(): void,
-      setTheme(theme: string): void,
+      theme: string;
+      loadData(): void;
+      applyCss(): void;
+      setTheme(theme: string): void;
     };
     plugins: {
       plugins: {
         "cmenu-plugin": {
           _loaded: boolean;
-          settings: { menuCommands: {id: string, name: string}[] };
+          settings: { menuCommands: { id: string; name: string }[] };
           saveSettings(): void;
         };
       };
@@ -78,15 +82,20 @@ declare module "obsidian" {
     loadWorkspace(workspaceName: string): void;
     setActiveWorkspace(workspaceName: string): void;
     activeWorkspace: string;
+    saveData(): void;
     workspaces: { [x: string]: Workspaces }; // TODO: improve this typing
   }
 
   export interface Workspace extends Events {
     updateOptions(): void;
     on(name: "workspace-load", callback: (workspaceName: string) => any, ctx?: any): EventRef;
-    on(name: "workspace-save", callback: (workspaceName: string) => any, ctx?: any): EventRef;
+    on(name: "workspace-save", callback: (workspaceName: string, modeName: string) => any, ctx?: any): EventRef;
     on(name: "workspace-delete", callback: (workspaceName: string) => any, ctx?: any): EventRef;
-    on(name: "workspace-rename", callback: (newWorkspaceName: string, oldWorkspaceName: string) => any, ctx?: any): EventRef;
+    on(
+      name: "workspace-rename",
+      callback: (newWorkspaceName: string, oldWorkspaceName: string) => any,
+      ctx?: any
+    ): EventRef;
   }
 
   export interface Workspaces {
