@@ -1,5 +1,5 @@
 import WorkspacesPlus from "./main";
-import { App, PluginSettingTab, Setting } from "obsidian";
+import { App, PluginSettingTab, Setting, setIcon } from "obsidian";
 import { FileSuggest } from "./suggesters/fileSuggest";
 
 const SETTINGS_ATTR = "workspaces-plus:settings-v1";
@@ -32,10 +32,11 @@ export const DEFAULT_SETTINGS: WorkspacesPlusSettings = {
   reloadLivePreview: false,
   workspaceSwitcherRibbon: false,
   modeSwitcherRibbon: false,
-  replaceNativeRibbon: true,
+  replaceNativeRibbon: false,
 };
 
 function getChildIds(split: any, leafs: any[] = null): any {
+  // recursive function to get metadata from all leafs in a workspace split
   if (!leafs) leafs = [];
   if (split.type == "leaf") {
     leafs.push({ id: split.id, file: split.state.state.file, mode: split.state.state.mode });
@@ -59,8 +60,14 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
     const { containerEl } = this;
     containerEl.empty();
 
-    containerEl.createEl("h2", { text: "Workspaces Plus" });
-    containerEl.createEl("h3", {
+    if (!this.plugin.utils.isNativePluginEnabled) {
+      containerEl.createEl("h2", {
+        text: "Please enable the Workspaces plugin under Core Plugins before using this plugin",
+      });
+      return;
+    }
+    // containerEl.createEl("h2", { text: "Workspaces Plus" });
+    containerEl.createEl("h2", {
       text: "Quick Switcher Settings",
     });
     new Setting(containerEl)
@@ -90,20 +97,7 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.workspaceSwitcherRibbon).onChange(value => {
           this.plugin.settings.workspaceSwitcherRibbon = value;
           this.plugin.saveData(this.plugin.settings);
-          if (value) this.plugin.showWorkspaceRibbonButton();
-          else this.plugin.ribbonIconWorkspaces.hide();
-        })
-      );
-
-    new Setting(containerEl)
-      .setName("Show Workspace Mode Sidebar Ribbon Icon")
-      // .setDesc(``)
-      .addToggle(toggle =>
-        toggle.setValue(this.plugin.settings.modeSwitcherRibbon).onChange(value => {
-          this.plugin.settings.modeSwitcherRibbon = value;
-          this.plugin.saveData(this.plugin.settings);
-          if (value) this.plugin.showModeRibbonButton();
-          else this.plugin.ribbonIconMode.hide();
+          this.plugin.toggleWorkspaceRibbonButton();
         })
       );
 
@@ -114,36 +108,61 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
         toggle.setValue(this.plugin.settings.replaceNativeRibbon).onChange(value => {
           this.plugin.settings.replaceNativeRibbon = value;
           this.plugin.saveData(this.plugin.settings);
-          if (!this.plugin.nativeWorkspaceRibbonItem)
-            this.plugin.nativeWorkspaceRibbonItem = document.body.querySelector('[aria-label="Manage workspaces"]');
-          if (value) this.plugin.nativeWorkspaceRibbonItem.hide();
-          else this.plugin.nativeWorkspaceRibbonItem.show();
+          this.plugin.toggleNativeWorkspaceRibbon();
         })
       );
-    containerEl.createEl("h3", {
+
+    new Setting(containerEl)
+      .setName("Show Workspace Mode Sidebar Ribbon Icon")
+      // .setDesc(``)
+      .addToggle(toggle =>
+        toggle.setValue(this.plugin.settings.modeSwitcherRibbon).onChange(value => {
+          this.plugin.settings.modeSwitcherRibbon = value;
+          this.plugin.saveData(this.plugin.settings);
+          this.plugin.toggleModeRibbonButton();
+        })
+      );
+
+    containerEl.createEl("h2", {
       text: "Workspace Enhancements",
     });
 
     new Setting(containerEl)
-      .setName("Enable Workspace Modes")
+      .setName(
+        createFragment(function (e) {
+          e.appendText("Workspace Modes"),
+            e.createSpan({
+              cls: "flair mod-pop",
+              text: "beta",
+            });
+        })
+      )
       .setDesc(
         `Modes are a new type of Workspace that store all of the native Obsidian Editor, Files & Links, 
         and Appearance settings. Enabling this will add a new mode switcher to the status bar that will allow you
         to save, apply, rename, and switch between modes.`
       )
-      .addToggle(toggle =>
-        toggle.setValue(this.plugin.settings.workspaceSettings).onChange(value => {
-          this.plugin.settings.workspaceSettings = value;
-          this.plugin.saveData(this.plugin.settings);
-          this.plugin.toggleModesFeature();
-        })
-      );
+      .then(setting => {
+        setting.settingEl.addClass("workspace-modes");
+        if (this.plugin.settings.workspaceSettings) setting.settingEl.addClass("is-enabled");
+        else setting.settingEl.removeClass("is-enabled");
+        setting.addToggle(toggle =>
+          toggle.setValue(this.plugin.settings.workspaceSettings).onChange(value => {
+            if (value) setting.settingEl.addClass("is-enabled");
+            else setting.settingEl.removeClass("is-enabled");
+            this.plugin.settings.workspaceSettings = value;
+            this.plugin.saveData(this.plugin.settings);
+            if (value) this.plugin.enableModesFeature();
+            else this.plugin.disableModesFeature();
+          })
+        );
+      });
 
     new Setting(containerEl)
       .setName("Auto save the current workspace on layout change")
       .setDesc(
         `This option will auto save your current workspace on any layout change.
-                Leave this disabled if you want full control over when your workspace is saved.`
+         Leave this disabled if you want full control over when your workspace is saved.`
       )
       .addToggle(toggle =>
         toggle.setValue(this.plugin.settings.saveOnChange).onChange(value => {
@@ -154,6 +173,7 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Respect system dark mode setting")
+      .setClass("requires-workspace-modes")
       .setDesc(
         `Let the OS determine the light/dark mode setting when switching modes. This setting can only be used if Workspace Modes is enabled.`
       )
@@ -166,6 +186,7 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
 
     new Setting(containerEl)
       .setName("Automatically reload Obsidian on Live Preview setting change")
+      .setClass("requires-workspace-modes")
       .setDesc(
         `When switching between Modes with different Experimental Live Preview settings, reload Obsidian in order for the setting
                 change to take effect. ⚠️Note: Obsidian will reload automatically after changing workspaces, if needed, without any prompts.`
@@ -177,69 +198,141 @@ export class WorkspacesPlusSettingsTab extends PluginSettingTab {
         })
       );
 
-    containerEl.createEl("h3", {
+    containerEl.createEl("h2", {
       text: "Per Workspace Settings",
     });
+
     let { workspaces } = this.plugin.workspacePlugin;
     Object.entries(workspaces).forEach(entry => {
       const [workspaceName, workspace] = entry;
-      if (workspaceName.match(/^mode:/i)) return;
-      containerEl.createEl("h3", {
-        text: workspaceName,
-      });
-      new Setting(containerEl).setName(`Workspace Description`).addText(textfield => {
+      const workspaceSettings = this.plugin.utils.getWorkspaceSettings(workspaceName);
+
+      if (this.plugin.utils.isMode(workspaceName)) return;
+
+      // containerEl.createEl("h3", {
+      //   text: workspaceName,
+      // });
+
+      new Setting(containerEl)
+        .setHeading()
+        .setClass("settings-heading")
+        .setName(workspaceName)
+        .then(setting => {
+          setting.settingEl.addClass("is-collapsed");
+
+          const iconContainer = createSpan({
+            cls: "settings-collapse-indicator",
+          });
+
+          setIcon(iconContainer, "right-triangle");
+
+          setting.nameEl.prepend(iconContainer);
+
+          setting.settingEl.addEventListener("click", e => {
+            setting.settingEl.toggleClass("is-collapsed", !setting.settingEl.hasClass("is-collapsed"));
+          });
+        });
+      const subContainerEL = containerEl.createDiv({ cls: "settings-container" });
+      new Setting(subContainerEL).setName("Workspace Description").addText(textfield => {
         textfield.inputEl.type = "text";
-        textfield.setValue(String(workspace[SETTINGS_ATTR].description || ""));
+        textfield.inputEl.parentElement?.addClass("search-input-container");
+        textfield.setValue(String(workspaceSettings?.description || ""));
         textfield.onChange(value => {
-          workspace[SETTINGS_ATTR] && (workspace[SETTINGS_ATTR].description = value);
+          workspaceSettings.description = value;
           this.plugin.workspacePlugin.saveData();
         });
       });
-      new Setting(containerEl)
-        .setName(`Auto save workspace on changes`)
-        // .setDesc(``)
-        .addToggle(toggle =>
-          toggle.setValue(workspace[SETTINGS_ATTR]?.autoSave).onChange(value => {
-            workspace[SETTINGS_ATTR] && (workspace[SETTINGS_ATTR].autoSave = value);
-            this.plugin.workspacePlugin.saveData();
-          })
-        );
-      containerEl.createEl("h5", {
-        text: "File Overrides",
-      });
+
+      // new Setting(containerEl)
+      //   .setName(`Auto save workspace on changes (not yet implemented)`)
+      //   // .setDesc(``)
+      //   .addToggle(toggle =>
+      //     toggle.setValue(workspaceSettings?.autoSave).onChange(value => {
+      //       workspaceSettings.autoSave = value;
+      //       this.plugin.workspacePlugin.saveData();
+      //     })
+      //   );
+
+      new Setting(subContainerEL).setHeading().setName("File Overrides");
+
       getChildIds(workspace.main).forEach((leaf: any) => {
-        new Setting(containerEl)
-          .setName(leaf.file)
-          // TODO: Allow for settings leaf.state.type = "empty"
-          // TODO: Allow for dynamic file names
+        let currentFile: string;
+        if (workspaceSettings.fileOverrides && workspaceSettings.fileOverrides[leaf.id]) {
+          currentFile = workspaceSettings.fileOverrides[leaf.id];
+        } else {
+          currentFile = null;
+        }
+        new Setting(subContainerEL)
+          .setName(leaf.id ? leaf.id : "unknown")
+          .setClass("file-override")
           .addSearch(cb => {
             new FileSuggest(this.app, cb.inputEl);
-            cb.setPlaceholder("Example: folder1/template_file")
-              .setValue(leaf.file)
-              .onChange(overrideFile => {
-                console.log(overrideFile);
-              });
+            cb.setPlaceholder(leaf.file ? leaf.file : "");
+            if (currentFile) cb.setValue(currentFile);
+            // TODO: Allow for assigning names to pane IDs
+            cb.onChange(overrideFile => {
+              // store leaf ID and filename override to workspace settings
+              // the workspace load function will look for overrides and apply them
+              // need to create a function that can search for a leaf id and update it
+              if (!workspaceSettings.fileOverrides) workspaceSettings.fileOverrides = {};
+              if (overrideFile) workspaceSettings.fileOverrides[leaf.id] = overrideFile;
+              else delete workspaceSettings.fileOverrides[leaf.id];
+            });
           });
       });
     });
-    containerEl.createEl("h3", {
-      text: "Per Mode Settings",
-    });
+
+    containerEl
+      .createEl("h2", {
+        text: "Per Mode Settings",
+      })
+      .addClass("requires-workspace-modes");
+
     Object.entries(workspaces).forEach(entry => {
-      const [workspaceName, workspace] = entry;
-      if (!workspaceName.match(/^mode:/i)) return;
-      containerEl.createEl("h3", {
-        text: workspaceName.replace(/^mode: /i, ""),
-      });
+      const [modeName, mode] = entry;
+      if (!this.plugin.utils.isMode(modeName)) return;
+      const modeSettings = this.plugin.utils.getModeSettings(modeName);
+
       new Setting(containerEl)
-        .setName(`Store sidebar state`)
+        .setHeading()
+        .setClass("settings-heading")
+        .setClass("requires-workspace-modes")
+        .setName(modeName?.replace(/^mode: /i, ""))
+        .then(setting => {
+          setting.settingEl.addClass("is-collapsed");
+
+          const iconContainer = createSpan({
+            cls: "settings-collapse-indicator",
+          });
+
+          setIcon(iconContainer, "right-triangle");
+
+          setting.nameEl.prepend(iconContainer);
+
+          setting.settingEl.addEventListener("click", e => {
+            setting.settingEl.toggleClass("is-collapsed", !setting.settingEl.hasClass("is-collapsed"));
+          });
+        });
+
+      const subContainerEL = containerEl.createDiv({ cls: "settings-container" });
+
+      new Setting(subContainerEL)
+        .setName(`Save and load left/right sidebar state`)
+        .setClass("requires-workspace-modes")
         // .setDesc(``)
         .addToggle(toggle =>
-          toggle.setValue(workspace[SETTINGS_ATTR]?.saveSidebar).onChange(value => {
-            workspace[SETTINGS_ATTR] && (workspace[SETTINGS_ATTR].saveSidebar = value);
+          toggle.setValue(modeSettings?.saveSidebar).onChange(value => {
+            modeSettings.saveSidebar = value;
             this.plugin.workspacePlugin.saveData();
           })
         );
     });
   }
 }
+
+// setting.settingEl.addEventListener("click", (e) => {
+//   setting.settingEl.toggleClass(
+//     "is-collapsed",
+//     !setting.settingEl.hasClass("is-collapsed")
+//   );
+// });

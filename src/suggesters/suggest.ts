@@ -165,9 +165,9 @@ export abstract class TextInputSuggest<T> implements ISuggestOwner<T> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (<any>this.app).keymap.popScope(this.scope);
 
-    this.suggest.setSuggestions([]);
-    this.popper.destroy();
-    this.suggestEl.detach();
+    this.suggest?.setSuggestions([]);
+    this.popper?.destroy();
+    this.suggestEl?.detach();
   }
 
   abstract getSuggestions(inputStr: string): T[];

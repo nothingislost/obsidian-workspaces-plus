@@ -1,4 +1,5 @@
 import "obsidian";
+import { Plugin } from "obsidian";
 
 declare module "obsidian" {
   export interface FuzzySuggestModal<T> {
@@ -21,8 +22,10 @@ declare module "obsidian" {
   export interface Vault {
     getConfig(config: string): unknown;
     setConfig(config: string, value: unknown): void;
-    readConfigJson(section: string): Object;
+    readConfigJson(section: string): Promise<any>;
     saveConfig(): void;
+    exists(path: string): Promise<boolean>;
+    writeJson(fileName: string, workspaceMetadata: Object, prettyPrint: boolean): Promise<void>;
     config: Object;
   }
   export interface Vault extends Events {
@@ -57,12 +60,14 @@ declare module "obsidian" {
 
   export interface InstalledPlugin {
     enabled: boolean;
+    _loaded: boolean;
     instance: PluginInstance;
   }
 
   export interface InternalPlugins {
     plugins: Record<string, InstalledPlugin>;
     getPluginById(id: string): InstalledPlugin;
+    on(name: "change", callback: (plugin: InstalledPlugin) => any, ctx?: any): EventRef;
   }
 
   export interface ViewRegistry {
@@ -74,6 +79,7 @@ declare module "obsidian" {
     id: string;
     name: string;
     description: string;
+    _loaded: boolean;
   }
 
   export interface WorkspacePluginInstance extends PluginInstance {
@@ -81,6 +87,7 @@ declare module "obsidian" {
     saveWorkspace(workspaceName: string): void;
     loadWorkspace(workspaceName: string): void;
     setActiveWorkspace(workspaceName: string): void;
+    plugin: PluginInstance;
     activeWorkspace: string;
     saveData(): void;
     workspaces: { [x: string]: Workspaces }; // TODO: improve this typing

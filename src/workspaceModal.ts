@@ -171,6 +171,7 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
       });
     }
     this.onOpen();
+    (this.app.workspace as any).pushClosable(this);
   }
 
   onOpen(): void {
@@ -212,8 +213,8 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     if (!this.values && workspaceName && evt.shiftKey) {
       this.saveAndStay();
-      if (!/^mode:/i.test(workspaceName)) this.setWorkspace(workspaceName);
-      this.close();
+      // if (!/^mode:/i.test(workspaceName)) this.setWorkspace(workspaceName);
+      // this.close();
       return false;
     } else if (!this.chooser.values) return false;
     let item = this.chooser.values ? this.chooser.values[this.chooser.selectedItem] : workspaceName;
@@ -223,7 +224,10 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
   saveAndStay(): void {
     let workspaceName = this.inputEl.value ? this.inputEl.value : this.chooser.values[this.chooser.selectedItem].item;
     this.workspacePlugin.saveWorkspace(workspaceName);
+    this.chooser.chooser.updateSuggestions();
+    if (!/^mode:/i.test(workspaceName)) this.setWorkspace(workspaceName);
     new Notice("Successfully saved workspace: " + workspaceName);
+    this.close();
   }
 
   saveAndSwitch(): void {
@@ -232,9 +236,11 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
     new Notice("Successfully saved workspace: " + this.activeWorkspace);
   }
 
-  deleteWorkspace(): void {
-    let currentSelection = this.chooser.selectedItem;
-    let workspaceName = this.chooser.values[currentSelection].item;
+  deleteWorkspace(workspaceName: string = null): void {
+    if (!workspaceName) {
+      let currentSelection = this.chooser.selectedItem;
+      workspaceName = this.chooser.values[currentSelection].item;
+    }
     if (this.settings.showDeletePrompt) {
       const confirmEl = createConfirmationDialog(this.app, {
         cta: "Delete",
@@ -251,8 +257,9 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
 
   renderSuggestion(item: FuzzyMatch<any>, el: HTMLElement): void {
     super.renderSuggestion(item, el);
+    const workspaceName = el.textContent;
     const resultEl = document.body.querySelector("div.workspaces-plus-modal div.prompt-results") as HTMLElement;
-    const existingEl = resultEl.querySelector('div[data-workspace-name="' + el.textContent + '"]') as HTMLElement;
+    const existingEl = resultEl.querySelector('div[data-workspace-name="' + workspaceName + '"]') as HTMLElement;
     let wrapperEl;
     if (existingEl) {
       wrapperEl = existingEl;
@@ -261,12 +268,12 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
     }
     let isMobile;
     try {
-      isMobile = this.workspacePlugin.workspaces[el.textContent].left.type == "mobile-drawer";
+      isMobile = this.workspacePlugin.workspaces[workspaceName].left.type == "mobile-drawer";
     } catch {}
-    this.addDeleteButton(wrapperEl);
+    this.addDeleteButton(wrapperEl, workspaceName);
     this.addRenameButton(wrapperEl, el);
     this.addPlatformButton(wrapperEl, isMobile ? "mobile" : "desktop");
-    this.addDescription(wrapperEl, el.textContent);
+    this.addDescription(wrapperEl, workspaceName);
   }
 
   wrapSuggestion(childEl: HTMLElement, parentEl: HTMLElement): HTMLElement {
@@ -294,12 +301,12 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
     renameIcon.addEventListener("click", event => this.onRenameClick(event, el));
   }
 
-  addDeleteButton(wrapperEl: HTMLElement): void {
+  addDeleteButton(wrapperEl: HTMLElement, workspaceName: string): void {
     const deleteIcon = wrapperEl.createDiv("delete-workspace");
     deleteIcon.setAttribute("aria-label", "Delete workspace");
     deleteIcon.setAttribute("aria-label-position", "top");
     deleteIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16"><path fill="none" d="M0 0h24v24H0z"/><path d="M7 4V2h10v2h5v2h-2v15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6H2V4h5zM6 6v14h12V6H6zm3 3h2v8H9V9zm4 0h2v8h-2V9z"/></svg>`;
-    deleteIcon.addEventListener("click", event => this.deleteWorkspace());
+    deleteIcon.addEventListener("click", event => this.deleteWorkspace(workspaceName));
   }
 
   addDescription(wrapperEl: HTMLElement, workspaceName: string): void {
