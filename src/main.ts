@@ -413,7 +413,7 @@ export default class WorkspacesPlus extends Plugin {
         settings && (settings["mode"] = null);
       }
       if (this.settings.systemDarkMode) this.utils.updateDarkModeFromOS(combinedSettings);
-      // TODO: Fix initial app start reloading when global is set to disabled and mode is set to enabled
+
       this.needsReload(combinedSettings) && this.reloadIfNeeded();
       this.applySettings(combinedSettings);
     }
@@ -454,7 +454,7 @@ export default class WorkspacesPlus extends Plugin {
     // this.app.workspace.updateOptions();
     this.app.setTheme(settings?.theme as string);
     this.app.customCss.setTheme(settings?.cssTheme);
-    this.app.changeBaseFontSize(settings?.baseFontSize as number);
+    // this.app.changeBaseFontSize(settings?.baseFontSize as number);
     this.app.customCss.loadData();
     this.app.customCss.applyCss();
     setTimeout(() => {
