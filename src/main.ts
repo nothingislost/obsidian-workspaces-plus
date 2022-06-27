@@ -54,6 +54,10 @@ export default class WorkspacesPlus extends Plugin {
     await this.saveData(this.settings);
   }
 
+  get isNativePluginEnabled() {
+    return this.workspacePlugin.plugin._loaded;
+  }
+
   addStatusBarIndicator() {
     const statusBarItem = this.addStatusBarItem();
     statusBarItem.addClass("mod-clickable");
@@ -94,6 +98,7 @@ export default class WorkspacesPlus extends Plugin {
   debouncedSave = debounce(
     // avoid overly serializing the workspace during expensive operations like window resize
     () => {
+      if (!this.app.workspace.layoutReady) return;
       this.workspacePlugin.saveWorkspace(this.workspacePlugin.activeWorkspace);
     },
     2000,
@@ -171,11 +176,13 @@ export default class WorkspacesPlus extends Plugin {
   }
 
   installWorkspaceHooks() {
+    const plugin = this;
     // patch the internal workspaces plugin to emit events on save, delete, and load
     this.register(
       around(this.workspacePlugin, {
         saveWorkspace(old) {
           return async function saveWorkspace(workspaceName, ...etc) {
+            if (!workspaceName || !plugin.isNativePluginEnabled || !this.app.workspace.layoutReady) return;
             const result = await old.call(this, workspaceName, ...etc);
             await this.app.workspace.trigger("workspace-save", workspaceName);
             return result;

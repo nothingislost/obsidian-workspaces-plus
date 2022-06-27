@@ -77,6 +77,24 @@ declare module "obsidian" {
     on(name: "workspace-rename", callback: (newWorkspaceName: string, oldWorkspaceName: string) => any, ctx?: any): EventRef;
   }
 
+  export interface WorkspacePluginInstance extends PluginInstance {
+    deleteWorkspace(workspaceName: string): void;
+    saveWorkspace(workspaceName: string): void;
+    loadWorkspace(workspaceName: string): void;
+    setActiveWorkspace(workspaceName: string): void;
+    plugin: PluginInstance;
+    activeWorkspace: string;
+    saveData(): void;
+    workspaces: { [x: string]: Workspaces }; // TODO: improve this typing
+  }
+
+  export interface PluginInstance {
+    id: string;
+    name: string;
+    description: string;
+    _loaded: boolean;
+  }
+
   export interface Workspaces {
     [x: string]: any; // TODO: improve this typing
   }
