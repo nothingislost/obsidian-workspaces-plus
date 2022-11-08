@@ -51,7 +51,7 @@ export class WorkspacesPlusPluginModeModal extends FuzzySuggestModal<string> {
 
     // clone the input element as a hacky way to get rid of the obsidian onInput handler
     const inputElClone = this.inputEl.cloneNode() as HTMLInputElement;
-    this.modalEl.replaceChild(inputElClone, this.inputEl);
+    // this.modalEl.replaceChild(inputElClone, this.inputEl);
     this.inputEl = inputElClone;
   }
 
