@@ -59,9 +59,9 @@ export class WorkspacesPlusPluginWorkspaceModal extends FuzzySuggestModal<string
     this.modalEl.on("mousemove", ".workspace-item", this.onSuggestionMouseover.bind(this));
 
     // clone the input element as a hacky way to get rid of the obsidian onInput handler
-    const inputElClone = this.inputEl.cloneNode() as HTMLInputElement;
+    // const inputElClone = this.inputEl.cloneNode() as HTMLInputElement;
     // this.modalEl.replaceChild(inputElClone, this.inputEl);
-    this.inputEl = inputElClone;
+    // this.inputEl = inputElClone;
   }
 
   onNoSuggestion(): void {
