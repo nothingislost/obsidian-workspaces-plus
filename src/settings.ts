@@ -35,12 +35,10 @@ export const DEFAULT_SETTINGS: WorkspacesPlusSettings = {
   replaceNativeRibbon: false,
 };
 
-function getChildIds(split: any, leafs: any[] = null): any {
-  // recursive function to get metadata from all leafs in a workspace split
-  if (!leafs) leafs = [];
-  if (split.type == "leaf") {
+function getChildIds (split: any, leafs: any[] = []): any[] {
+  if (split.type === "leaf") {
     leafs.push({ id: split.id, file: split.state.state.file, mode: split.state.state.mode });
-  } else if (split.type == "split") {
+  } else if (split.type === "split" || split.type === "tabs") {
     split.children.forEach((child: any) => {
       getChildIds(child, leafs);
     });
@@ -51,12 +49,12 @@ function getChildIds(split: any, leafs: any[] = null): any {
 export class WorkspacesPlusSettingsTab extends PluginSettingTab {
   plugin: WorkspacesPlus;
 
-  constructor(app: App, plugin: WorkspacesPlus) {
+  constructor (app: App, plugin: WorkspacesPlus) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
-  display(): void {
+  display (): void {
     const { containerEl } = this;
     containerEl.empty();
 
