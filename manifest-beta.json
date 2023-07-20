@@ -1,7 +1,7 @@
 {
   "id": "workspaces-plus",
   "name": "Workspaces Plus",
-  "version": "0.4.17",
+  "version": "0.4.18",
   "minAppVersion": "1.1.1",
   "description": "Quickly switch and manage workspaces",
   "author": "NothingIsLost",
