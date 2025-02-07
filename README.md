@@ -176,5 +176,5 @@ Share feedback, issues, and ideas on [github](https://github.com/nothingislost/o
     - This feature will create a command for every workspace in your vault, which can then be bound to hotkeys
     - This feature supports renaming workspaces while maintaining the associated hotkey
     - You can add these workspace load commands to cMenu and workspace renames will automatically update the cMenu button as well
-  - Add a data attribute to the body of the HTML document which indicates the currently active workspace name
+  - Add a data attribute to the body of the HTML document which indicates the currently active workspace name.
     - The selector looks like this: body[data-workspace-name="My Workspace"]
